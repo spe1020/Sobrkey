@@ -320,8 +320,9 @@ async function publishNote(content, tags = []) {
 }
 
 /**
- * Fetch notes with specific tags
- * @param {Array} tagFilters - Array of tag filters, e.g. ["t", "sobrkey"]
+ * Fetch notes with specific tags - optimized for #sobrkey tag retrieval
+ * This version includes an option to fetch all notes without tags
+ * @param {Array} tagFilters - Array of tag filters, e.g. [["t", "sobrkey"]]
  * @param {number} limit - Maximum number of notes to fetch
  * @param {number} since - Fetch notes since this timestamp (seconds)
  * @returns {Promise<{success: boolean, message: string, notes: Array}>}
@@ -330,230 +331,186 @@ async function fetchNotes(tagFilters = [["t", "sobrkey"]], limit = 100, since = 
   try {
     console.log("Fetching notes with tag filters:", tagFilters);
     
+    // If tagFilters includes a special "all" filter, we'll fetch all notes
+    const fetchAllNotes = Array.isArray(tagFilters) && 
+      tagFilters.length === 1 && 
+      tagFilters[0] === "all";
+    
+    if (fetchAllNotes) {
+      console.log("Fetching ALL notes without tag filtering");
+    }
+    
     if (!nostrPool) {
       const init = await initializeNostr();
       if (!init.success) return { ...init, notes: [] };
     }
     
-    // Create a filter
+    // Default to last 30 days for better chances of finding content
+    const queryTimestamp = since || Math.floor((Date.now() / 1000) - 30 * 24 * 60 * 60);
+    
+    // Only use the relays that we know work with our tag format
+    // Based on debug results, relay.damus.io and nos.lol work with #t format
+    const workingRelays = [
+      'wss://relay.damus.io',
+      'wss://nos.lol'
+    ];
+    
+    // Get relays from the pool or use our filtered reliable list
+    const relayUrls = Array.isArray(nostrPool.relays) ? 
+      nostrPool.relays.filter(url => workingRelays.includes(url)) : 
+      workingRelays;
+    
+    console.log("Using reliable relays:", relayUrls);
+    
+    // Create a filter specifically optimized for the relays that work
     const filter = {
       kinds: [1],
-      limit: limit
+      limit: limit,
+      since: queryTimestamp
     };
     
-    // Add tags filter
-    if (tagFilters.length > 0) {
-      for (const [key, value] of tagFilters) {
-        if (!key || !value) continue;
-        
-        // Handle keys with or without # prefix
-        const tagKey = key.startsWith('#') ? key : `#${key}`;
-        if (!filter[tagKey]) filter[tagKey] = [];
-        
-        // Handle values with or without # prefix
-        const tagValue = value.startsWith('#') ? value.substring(1) : value;
-        filter[tagKey].push(tagValue);
-        
-        // Also add direct "t" tag in case some relays use a different format
-        if (key === 't' || key === '#t') {
-          if (!filter['t']) filter['t'] = [];
-          filter['t'].push(tagValue);
-        }
-      }
-    }
-    
-    // Add since filter if provided
-    if (since) {
-      filter.since = since;
-    } else {
-      // Default to last 30 days for better chances of finding content
-      filter.since = Math.floor((Date.now() / 1000) - 30 * 24 * 60 * 60);
-    }
-    
-    console.log("Fetching notes with filter:", filter);
-    
-    // Get relays from the pool or use our default list
-    const relayUrls = Array.isArray(nostrPool.relays) ? nostrPool.relays : 
-      (window.SobrKeyConstants?.DEFAULT_RELAYS || [
-        'wss://relay.damus.io',
-        'wss://relay.nostr.band',
-        'wss://nostr.wine',
-        'wss://nos.lol',
-        'wss://relay.snort.social'
-      ]);
-    
-    console.log("Using relays:", relayUrls);
-    
-    // Create a valid filter for Nostr relays
-    const validFilter = {
-      kinds: [1], // Note kind
-      limit: limit
-    };
-    
-    // Add tag filters properly
-    if (tagFilters && tagFilters.length > 0) {
+    // Process tag filters based on debug results
+    if (!fetchAllNotes && tagFilters && tagFilters.length > 0) {
+      // We need to emphasize the #t format since that's what works on damus and nos.lol
       tagFilters.forEach(([key, value]) => {
-        if (key && value) {
-          // Handle key with or without # prefix
-          const tagKey = key.startsWith("#") ? key : `#${key}`;
-          if (!validFilter[tagKey]) {
-            validFilter[tagKey] = [];
-          }
-          
-          // Handle value with or without # prefix
-          const tagValue = value.startsWith("#") ? value.substring(1) : value;
-          validFilter[tagKey].push(tagValue);
-          
-          // Also add as direct filter for relays that use different format
-          if (key === "t" || key === "#t") {
-            if (!validFilter.t) validFilter.t = [];
-            validFilter.t.push(tagValue);
-          }
+        if (!key || !value) return;
+        
+        // Debug logs show #t format works best
+        if (!filter['#t']) {
+          filter['#t'] = [];
+        }
+        
+        // Normalize the value (remove # if present)
+        const normalizedValue = value.replace(/^#/, '');
+        filter['#t'].push(normalizedValue);
+        
+        // Also try the hashtag format for the one post that used it
+        if (!filter['#t'].includes(`#${normalizedValue}`)) {
+          filter['#t'].push(`#${normalizedValue}`);
         }
       });
     }
     
-    // Add since filter
-    if (since) {
-      validFilter.since = since;
-    }
+    console.log("Using optimized filter:", filter);
     
-    console.log("Using valid filter:", validFilter);
-    
-    // Fetch notes from relays
+    // Fetch notes with proper error handling
     let notes = [];
+    let error = null;
+    
     try {
-      if (typeof nostrPool.list === 'function') {
-        console.log("Using SimplePool.list method");
-        notes = await nostrPool.list(relayUrls, [validFilter]);
-      } else if (typeof nostrPool.query === 'function') {
-        console.log("Using SimplePool.query method");
-        notes = await nostrPool.query(relayUrls, [validFilter]);
-      } else {
-        console.error("No compatible query method found in nostrPool", 
-          Object.getOwnPropertyNames(Object.getPrototypeOf(nostrPool))
-            .filter(item => typeof nostrPool[item] === 'function')
-        );
-        
-        // Try the most basic relay implementation: connect to one relay manually
-        console.log("Attempting to fetch using low-level relay API");
-        
-        const { Relay } = window.NostrTools;
-        let manualNotes = [];
-        
-        // Connect to each relay manually with improved error handling
-        for (const url of relayUrls) {
-          try {
-            console.log(`Attempting manual connection to ${url}...`);
+      // Modern nostr-tools v2+ approach using subscribeMany
+      console.log("Using modern SimplePool.subscribeMany approach");
+      try {
+        // Create a promise that will resolve with the collected notes
+        notes = await Promise.race([
+          new Promise((resolve) => {
+            const collectedNotes = [];
             
-            // Create the relay connection
-            const relay = Relay.connect(url);
-            
-            // Set up connection timeout
-            const connectionPromise = new Promise((resolve, reject) => {
-              // Set up connect handler
-              relay.on('connect', () => {
-                console.log(`Connected to ${url} manually (confirmed)`);
-                resolve(relay);
-              });
-              
-              // Set up error handler
-              relay.on('error', (err) => {
-                console.warn(`Error connecting to ${url}:`, err);
-                reject(err);
-              });
-              
-              // Set a timeout
-              setTimeout(() => {
-                reject(new Error(`Connection timeout for ${url}`));
-              }, 5000);
-            });
-            
-            // Wait for connection or timeout
-            const connectedRelay = await connectionPromise;
-            
-            // Request events with timeout
-            const events = await new Promise((resolve) => {
-              const events = [];
-              console.log(`Subscribing to ${url} with filter:`, validFilter);
-              
-              try {
-                const sub = connectedRelay.sub([validFilter]);
-                
-                sub.on('event', event => {
-                  console.log(`Received event from ${url}:`, event);
-                  events.push(event);
-                });
-                
-                sub.on('eose', () => {
-                  console.log(`End of stored events from ${url}`);
-                  setTimeout(() => {
-                    try {
-                      sub.unsub();
-                    } catch (e) {
-                      console.warn(`Error unsubscribing from ${url}:`, e);
-                    }
-                    resolve(events);
-                  }, 1000); // Wait a bit after EOSE
-                });
-                
-                // Close after timeout even if no EOSE received
-                setTimeout(() => {
-                  try {
-                    sub.unsub();
-                  } catch (e) {
-                    console.warn(`Error unsubscribing from ${url} (timeout):`, e);
+            // Set up subscription
+            const sub = nostrPool.subscribeMany(
+              relayUrls,
+              [filter],
+              {
+                // Process each event as it comes in
+                onEvent: (event) => {
+                  collectedNotes.push(event);
+                },
+                // When all relays report they've sent all matching events
+                onEose: () => {
+                  console.log(`EOSE received, collected ${collectedNotes.length} notes`);
+                  // Only resolve once we have all events or hit a timeout
+                  if (collectedNotes.length > 0) {
+                    resolve(collectedNotes);
+                    sub.close();
                   }
-                  resolve(events);
-                }, 8000);
-              } catch (subError) {
-                console.warn(`Error creating subscription for ${url}:`, subError);
-                resolve([]);
+                }
               }
-            });
+            );
             
-            console.log(`Got ${events.length} events from ${url} manually`);
-            if (events.length > 0) {
-              manualNotes = [...manualNotes, ...events];
-            }
-            
-          } catch (manualError) {
-            console.warn(`Manual connection to ${url} failed:`, manualError);
-          }
-        }
+            // Set a backup timer to resolve even if we never get EOSE
+            setTimeout(() => {
+              console.log(`Timeout reached with ${collectedNotes.length} notes collected`);
+              if (collectedNotes.length > 0) {
+                resolve(collectedNotes);
+                sub.close();
+              } else if (collectedNotes.length === 0) {
+                // If timeout occurred with no events, try to keep subscription open
+                // for a bit longer in case events are just delayed
+                setTimeout(() => {
+                  console.log(`Extended timeout reached with ${collectedNotes.length} notes collected`);
+                  resolve(collectedNotes);
+                  sub.close();
+                }, 5000);
+              }
+            }, 10000);
+          }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Query timeout")), 20000))
+        ]);
         
-        if (manualNotes.length > 0) {
-          notes = manualNotes;
+        console.log(`Retrieved ${notes.length} notes using subscribeMany`);
+      } catch (e) {
+        console.warn("Error using subscribeMany:", e.message);
+      }
+      
+      // Fallback for older libraries - try query method if available and notes are empty
+      if (notes.length === 0 && typeof nostrPool.query === 'function') {
+        console.log("Falling back to SimplePool.query method");
+        try {
+          notes = await Promise.race([
+            nostrPool.query(relayUrls, [filter]),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("Query timeout")), 15000))
+          ]);
+          console.log(`Retrieved ${notes.length} notes using query method`);
+        } catch (e) {
+          console.warn("Error using query method:", e.message);
         }
       }
-    } catch (queryError) {
-      console.error("Error during query:", queryError);
+    } catch (e) {
+      error = e;
+      console.error("Error fetching notes:", e);
     }
     
-    console.log(`Retrieved ${notes.length} notes`);
+    // If we've found notes, return them
+    if (notes.length > 0) {
+      // Sort notes by created_at (newest first)
+      notes.sort((a, b) => b.created_at - a.created_at);
+      
+      return {
+        success: true,
+        message: `Found ${notes.length} notes`,
+        notes: notes
+      };
+    }
     
-    // Sort notes by created_at (newest first)
-    notes.sort((a, b) => b.created_at - a.created_at);
+    // If we've hit an error and have no notes, return the error
+    if (error) {
+      return {
+        success: false,
+        message: `Error fetching notes: ${error.message}`,
+        notes: []
+      };
+    }
     
+    // Otherwise, return an empty success
     return {
       success: true,
-      message: `Retrieved ${notes.length} notes`,
-      notes: notes
+      message: "No notes found with the #sobrkey tag",
+      notes: []
     };
     
   } catch (error) {
-    console.error("Error fetching notes:", error);
+    console.error("Error in fetchNotes:", error);
     return {
       success: false,
-      message: `Error fetching notes: ${error.message}`,
+      message: `Failed to fetch notes: ${error.message}`,
       notes: []
     };
   }
 }
 
 /**
- * Subscribe to new notes with specific tags
- * @param {Array} tagFilters - Array of tag filters, e.g. ["t", "sobrkey"]
+ * Subscribe to new notes with specific tags - optimized for #sobrkey tag
+ * @param {Array} tagFilters - Array of tag filters, e.g. [["t", "sobrkey"]]
  * @param {Function} callback - Callback function for new notes
  * @returns {Function} Unsubscribe function
  */
@@ -570,60 +527,67 @@ function subscribeToNotes(tagFilters = [["t", "sobrkey"]], callback) {
       since: Math.floor(Date.now() / 1000) // Only notes from now on
     };
     
-    // Add tag filters properly
+    // Process tag filters based on debug results - using #t format for optimal compatibility
     if (tagFilters && tagFilters.length > 0) {
       tagFilters.forEach(([key, value]) => {
         if (key && value) {
-          // Handle key with or without # prefix
-          const tagKey = key.startsWith("#") ? key : `#${key}`;
-          if (!validFilter[tagKey]) {
-            validFilter[tagKey] = [];
+          // Debug logs show #t format works best
+          if (!validFilter['#t']) {
+            validFilter['#t'] = [];
           }
           
-          // Handle value with or without # prefix
-          const tagValue = value.startsWith("#") ? value.substring(1) : value;
-          validFilter[tagKey].push(tagValue);
+          // Normalize the value (remove # if present)
+          const normalizedValue = value.replace(/^#/, '');
+          validFilter['#t'].push(normalizedValue);
           
-          // Also add as direct filter for relays that use different format
-          if (key === "t" || key === "#t") {
-            if (!validFilter.t) validFilter.t = [];
-            validFilter.t.push(tagValue);
+          // Also try the hashtag format for the one post that used it
+          if (!validFilter['#t'].includes(`#${normalizedValue}`)) {
+            validFilter['#t'].push(`#${normalizedValue}`);
           }
         }
       });
     }
     
-    console.log("Using valid subscription filter:", validFilter);
+    console.log("Using optimized subscription filter:", validFilter);
     
-    // Get relays from the pool or use our default list
-    const relayUrls = Array.isArray(nostrPool.relays) ? nostrPool.relays : 
-      (window.SobrKeyConstants?.DEFAULT_RELAYS || [
-        'wss://relay.damus.io',
-        'wss://relay.nostr.band',
-        'wss://nostr.wine',
-        'wss://nos.lol',
-        'wss://relay.snort.social'
-      ]);
+    // Only use the relays that we know work with our tag format
+    // Based on debug results, relay.damus.io and nos.lol work with #t format
+    const workingRelays = [
+      'wss://relay.damus.io',
+      'wss://nos.lol'
+    ];
+    
+    // Get relays from the pool or use our filtered reliable list
+    const relayUrls = Array.isArray(nostrPool.relays) ? 
+      nostrPool.relays.filter(url => workingRelays.includes(url)) : 
+      workingRelays;
     
     console.log("Subscribing to events on relays:", relayUrls);
     
     try {
-      // Subscribe to new notes
-      const sub = nostrPool.sub(relayUrls, [validFilter]);
-      
-      sub.on('event', (event) => {
-        try {
-          console.log("Received new event:", event);
-          callback(event);
-        } catch (callbackError) {
-          console.error("Error in subscription callback:", callbackError);
+      // Use subscribeMany for consistent API between fetch and subscribe
+      const sub = nostrPool.subscribeMany(
+        relayUrls, 
+        [validFilter],
+        {
+          onEvent: (event) => {
+            try {
+              console.log("Received new event:", event);
+              callback(event);
+            } catch (callbackError) {
+              console.error("Error in subscription callback:", callbackError);
+            }
+          },
+          onEose: () => {
+            console.log("EOSE received for subscription");
+          }
         }
-      });
+      );
       
       // Return unsubscribe function
       return () => {
         try {
-          sub.unsub();
+          sub.close(); // Modern API uses close() instead of unsub()
         } catch (unsubError) {
           console.error("Error unsubscribing:", unsubError);
         }
@@ -631,77 +595,53 @@ function subscribeToNotes(tagFilters = [["t", "sobrkey"]], callback) {
     } catch (subError) {
       console.error("Error creating subscription:", subError);
       
-      // Try manual subscription using Relay API
+      // Try alternative subscription using the modern API with individual relays
       try {
-        const { Relay } = window.NostrTools;
+        console.log("Attempting alternative subscription strategy for modern nostr-tools v2+");
         const activeSubscriptions = [];
         
-        // Connect to each relay manually with improved error handling
+        // Connect to each relay individually using modern approaches
         for (const url of relayUrls) {
           try {
-            console.log(`Attempting manual subscription connection to ${url}...`);
+            console.log(`Setting up individual relay subscription to ${url}...`);
             
-            // Create the relay connection
-            const relay = Relay.connect(url);
+            // Create a modern relay pool with just this relay
+            const singleRelay = new window.NostrTools.SimplePool();
+            singleRelay.addRelay(url);
             
-            // Set up connection promise
-            const connectionPromise = new Promise((resolve, reject) => {
-              // Set up handlers
-              relay.on('connect', () => {
-                console.log(`Connected to ${url} manually for subscription (confirmed)`);
-                resolve(relay);
-              });
-              
-              relay.on('error', (err) => {
-                console.warn(`Error connecting to ${url} for subscription:`, err);
-                reject(err);
-              });
-              
-              // Set a timeout
-              setTimeout(() => {
-                reject(new Error(`Connection timeout for ${url}`));
-              }, 5000);
-            });
-            
-            // Wait for connection (with timeout)
-            connectionPromise.then(connectedRelay => {
-              try {
-                console.log(`Creating subscription for ${url} with filter:`, validFilter);
-                const sub = connectedRelay.sub([validFilter]);
-                activeSubscriptions.push({ relay: connectedRelay, sub });
-                
-                // Listen for events
-                sub.on('event', event => {
+            // Create the subscription
+            const sub = singleRelay.subscribeMany(
+              [url], 
+              [validFilter],
+              {
+                onEvent: (event) => {
                   try {
                     console.log(`Received event from ${url} during subscription:`, event);
                     callback(event);
                   } catch (cbError) {
                     console.error(`Error in callback for ${url}:`, cbError);
                   }
-                });
-                
-                // Handle errors
-                sub.on('error', (err) => {
-                  console.warn(`Subscription error for ${url}:`, err);
-                });
-              } catch (subError) {
-                console.warn(`Error creating subscription for ${url}:`, subError);
+                },
+                onEose: () => {
+                  console.log(`EOSE received for ${url} subscription`);
+                }
               }
-            }).catch(err => {
-              console.warn(`Failed to connect to ${url} for subscription:`, err);
-            });
+            );
             
+            activeSubscriptions.push({ pool: singleRelay, sub });
           } catch (relayError) {
-            console.warn(`Failed to initialize connection to ${url}:`, relayError);
+            console.warn(`Failed to initialize subscription to ${url}:`, relayError);
           }
         }
         
         // Return unsubscribe function for all relays
         return () => {
-          activeSubscriptions.forEach(({ relay, sub }) => {
+          activeSubscriptions.forEach(({ pool, sub }) => {
             try {
-              sub.unsub();
-              relay.close();
+              sub.close();
+              // Modern pools don't need explicit closing, but we can remove relays
+              // to clean up resources
+              pool.close(); // Close the pools  
             } catch (closeError) {
               console.warn("Error closing subscription:", closeError);
             }

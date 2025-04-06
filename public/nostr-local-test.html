@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nostr Local Test Tool</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      color: #6366F1;
+      margin-bottom: 24px;
+    }
+    .section {
+      margin-bottom: 30px;
+      padding: 20px;
+      border-radius: 8px;
+      background-color: #f9f9fc;
+      border: 1px solid #e0e0e0;
+    }
+    .card {
+      background-color: white;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 16px;
+    }
+    button {
+      background-color: #6366F1;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+    button:hover {
+      background-color: #4F46E5;
+    }
+    input, textarea, select {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      width: 100%;
+      margin-bottom: 16px;
+    }
+    textarea {
+      min-height: 100px;
+      font-family: inherit;
+    }
+    .result {
+      background-color: #f0f0f0;
+      padding: 16px;
+      border-radius: 6px;
+      margin-top: 16px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .tag {
+      display: inline-block;
+      background-color: #f0f0ff;
+      color: #6366F1;
+      padding: 4px 10px;
+      border-radius: 16px;
+      margin-right: 8px;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .note {
+      border-left: 4px solid #6366F1;
+      padding-left: 12px;
+      margin: 16px 0;
+      font-style: italic;
+    }
+    .actions {
+      margin: 16px 0;
+    }
+    .tabs {
+      display: flex;
+      margin-bottom: 16px;
+    }
+    .tab {
+      padding: 10px 16px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+    }
+    .tab.active {
+      border-bottom: 2px solid #6366F1;
+      font-weight: bold;
+      color: #6366F1;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    #debug-log {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 6px;
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 10px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Nostr Local Test Tool for Sobrkey</h1>
+  
+  <div class="section">
+    <h2>Setup</h2>
+    <div class="card">
+      <p>
+        This tool will help diagnose issues with Nostr connectivity outside of Replit.
+        Run this file locally to test Nostr communication without any Replit-specific limitations.
+      </p>
+      <button id="init-nostr">Initialize Nostr</button>
+      <button id="check-keys">Check Keys</button>
+      <div id="setup-result" class="result">Status: Not initialized</div>
+    </div>
+  </div>
+  
+  <div class="tabs">
+    <div class="tab active" data-tab="fetch">Fetch Notes</div>
+    <div class="tab" data-tab="publish">Publish Note</div>
+    <div class="tab" data-tab="relay">Relay Test</div>
+    <div class="tab" data-tab="advanced">Advanced</div>
+  </div>
+  
+  <div class="tab-content active" id="fetch-tab">
+    <div class="section">
+      <h2>Fetch Notes</h2>
+      <div class="card">
+        <div class="actions">
+          <button id="fetch-all">Fetch All Notes (No Filter)</button>
+          <button id="fetch-sobrkey">Fetch Sobrkey Tag</button>
+          <button id="fetch-hashtag">Fetch #sobrkey Hashtag</button>
+          <button id="fetch-custom">Fetch With Custom Tag</button>
+        </div>
+        <div>
+          <label for="custom-tag">Custom Tag (for custom fetch):</label>
+          <input type="text" id="custom-tag" placeholder="Enter tag value (e.g. sobrkey)" value="sobrkey">
+        </div>
+        <div>
+          <label for="tag-format">Tag Format:</label>
+          <select id="tag-format">
+            <option value="t">t</option>
+            <option value="#t">#t</option>
+            <option value="e">e</option>
+            <option value="keyword">keyword</option>
+          </select>
+        </div>
+        <div>
+          <label for="days-ago">Time Period (days ago):</label>
+          <input type="number" id="days-ago" min="1" max="60" value="30">
+        </div>
+        <div>
+          <label for="limit">Results Limit:</label>
+          <input type="number" id="limit" min="1" max="500" value="50">
+        </div>
+        <div id="fetch-result" class="result">No fetch performed yet</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="tab-content" id="publish-tab">
+    <div class="section">
+      <h2>Publish Note</h2>
+      <div class="card">
+        <div>
+          <label for="note-content">Content:</label>
+          <textarea id="note-content" placeholder="Enter your note content here...">This is a test note from the Sobrkey Local Test Tool.</textarea>
+        </div>
+        <div id="tag-container">
+          <label>Tags:</label>
+          <div class="tags">
+            <span class="tag">sobrkey</span>
+            <button id="add-tag" style="font-size: 12px;">+ Add Tag</button>
+          </div>
+        </div>
+        <div class="actions">
+          <button id="publish-note">Publish Note</button>
+          <button id="clear-form">Clear Form</button>
+        </div>
+        <div id="publish-result" class="result">No publish performed yet</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="tab-content" id="relay-tab">
+    <div class="section">
+      <h2>Relay Test</h2>
+      <div class="card">
+        <div>
+          <label for="relay-url">Relay URL:</label>
+          <input type="text" id="relay-url" placeholder="wss://relay.example.com" value="wss://relay.damus.io">
+        </div>
+        <div class="actions">
+          <button id="test-relay">Test Relay Connection</button>
+          <button id="test-all-relays">Test All Default Relays</button>
+        </div>
+        <div id="relay-result" class="result">No relay test performed yet</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="tab-content" id="advanced-tab">
+    <div class="section">
+      <h2>Advanced Operations</h2>
+      <div class="card">
+        <div class="actions">
+          <button id="generate-keys">Generate New Keypair</button>
+          <button id="debug-info">Get Debug Info</button>
+          <button id="clear-local">Clear Local Storage</button>
+        </div>
+        <div id="advanced-result" class="result">No advanced operation performed yet</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="section">
+    <h2>Debug Log</h2>
+    <div id="debug-log"></div>
+    <button id="clear-log" style="margin-top: 10px;">Clear Log</button>
+  </div>
+  
+  <!-- Load Nostr library -->
+  <script>
+    // Load NostrTools dynamically
+    (function loadNostrTools() {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/nostr-tools@1.14.0/lib/nostr.bundle.min.js';
+      script.async = true;
+      script.onload = function() {
+        log('NostrTools library loaded');
+        // Initialize defaults once loaded
+        initializeDefaults();
+      };
+      script.onerror = function() {
+        log('Error loading NostrTools library', 'error');
+      };
+      document.head.appendChild(script);
+    })();
+    
+    // Globals
+    let nostrPool = null;
+    let userPubkey = null;
+    let userPrivkey = null;
+    
+    // Default relays
+    const DEFAULT_RELAYS = [
+      'wss://relay.damus.io',
+      'wss://nos.lol',
+      'wss://relay.nostr.info',
+      'wss://nostr-pub.wellorder.net',
+      'wss://relay.current.fyi',
+      'wss://relay.snort.social'
+    ];
+    
+    // Debug logger
+    function log(message, type = 'info') {
+      const logEl = document.getElementById('debug-log');
+      const timestamp = new Date().toLocaleTimeString();
+      const entry = document.createElement('div');
+      entry.classList.add(type);
+      entry.textContent = `[${timestamp}] ${message}`;
+      logEl.appendChild(entry);
+      logEl.scrollTop = logEl.scrollHeight;
+      console.log(`[${type}] ${message}`);
+    }
+    
+    // Initialize default values
+    function initializeDefaults() {
+      // Set up tabs
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+          document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+          document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+          this.classList.add('active');
+          document.getElementById(`${this.dataset.tab}-tab`).classList.add('active');
+        });
+      });
+      
+      // Set up buttons
+      document.getElementById('init-nostr').addEventListener('click', initializeNostr);
+      document.getElementById('check-keys').addEventListener('click', checkKeys);
+      document.getElementById('fetch-all').addEventListener('click', fetchAllNotes);
+      document.getElementById('fetch-sobrkey').addEventListener('click', fetchSobrkeyNotes);
+      document.getElementById('fetch-hashtag').addEventListener('click', fetchHashtagNotes);
+      document.getElementById('fetch-custom').addEventListener('click', fetchCustomTagNotes);
+      document.getElementById('publish-note').addEventListener('click', publishNote);
+      document.getElementById('clear-form').addEventListener('click', clearForm);
+      document.getElementById('test-relay').addEventListener('click', testRelay);
+      document.getElementById('test-all-relays').addEventListener('click', testAllRelays);
+      document.getElementById('generate-keys').addEventListener('click', generateKeys);
+      document.getElementById('debug-info').addEventListener('click', getDebugInfo);
+      document.getElementById('clear-local').addEventListener('click', clearLocalStorage);
+      document.getElementById('clear-log').addEventListener('click', clearLog);
+      document.getElementById('add-tag').addEventListener('click', addTag);
+      
+      // Try auto-init
+      tryAutoInit();
+    }
+    
+    // Try to auto initialize if keys exist
+    async function tryAutoInit() {
+      userPubkey = localStorage.getItem('sobrkey_pubkey_raw');
+      userPrivkey = localStorage.getItem('sobrkey_privatekey_raw');
+      
+      if (userPubkey && userPrivkey) {
+        await initializeNostr();
+      }
+    }
+    
+    // Initialize Nostr connection
+    async function initializeNostr() {
+      try {
+        // Check if NostrTools is loaded
+        if (!window.NostrTools) {
+          throw new Error('NostrTools library not loaded yet');
+        }
+        
+        log('Initializing Nostr connection...');
+        
+        // Get or create keys
+        userPubkey = localStorage.getItem('sobrkey_pubkey_raw');
+        userPrivkey = localStorage.getItem('sobrkey_privatekey_raw');
+        
+        if (!userPubkey || !userPrivkey) {
+          log('No keys found, generating new keypair...');
+          await generateKeys();
+        }
+        
+        // Create a pool for relays
+        const { SimplePool } = window.NostrTools;
+        nostrPool = new SimplePool();
+        
+        // Connect to relays
+        DEFAULT_RELAYS.forEach(relay => {
+          nostrPool.ensureRelay(relay);
+        });
+        
+        log(`Connected to Nostr with ${DEFAULT_RELAYS.length} relays`);
+        document.getElementById('setup-result').textContent = 
+          `Status: Initialized\nPublic Key: ${userPubkey}\nRelays: ${DEFAULT_RELAYS.join(', ')}`;
+        
+        return { success: true, message: 'Nostr initialized successfully' };
+      } catch (error) {
+        log(`Error initializing Nostr: ${error.message}`, 'error');
+        document.getElementById('setup-result').textContent = 
+          `Status: Failed to initialize\nError: ${error.message}`;
+        return { success: false, message: error.message };
+      }
+    }
+    
+    // Check keys
+    function checkKeys() {
+      try {
+        const pubkey = localStorage.getItem('sobrkey_pubkey_raw');
+        const privkey = localStorage.getItem('sobrkey_privatekey_raw');
+        const hasKeys = !!pubkey && !!privkey;
+        
+        const npub = pubkey ? window.NostrTools.nip19.npubEncode(pubkey) : null;
+        const nsec = privkey ? window.NostrTools.nip19.nsecEncode(privkey) : null;
+        
+        const result = {
+          hasKeys,
+          pubkey: pubkey ? `${pubkey.slice(0, 8)}...${pubkey.slice(-8)}` : null,
+          npub: npub ? `${npub.slice(0, 8)}...${npub.slice(-8)}` : null,
+          privateKeyExists: !!privkey,
+          nsecExists: !!nsec
+        };
+        
+        document.getElementById('setup-result').textContent = 
+          `Keys Check:\n${JSON.stringify(result, null, 2)}`;
+        log(`Keys check: ${hasKeys ? 'Keys found' : 'No keys found'}`);
+        
+        return result;
+      } catch (error) {
+        log(`Error checking keys: ${error.message}`, 'error');
+        document.getElementById('setup-result').textContent = 
+          `Keys Check Failed:\nError: ${error.message}`;
+        return { hasKeys: false, error: error.message };
+      }
+    }
+    
+    // Generate new keypair
+    async function generateKeys() {
+      try {
+        if (!window.NostrTools) {
+          throw new Error('NostrTools library not loaded yet');
+        }
+        
+        // Generate keypair
+        const privateKey = window.NostrTools.generatePrivateKey();
+        const publicKey = window.NostrTools.getPublicKey(privateKey);
+        
+        // Store keys
+        localStorage.setItem('sobrkey_pubkey_raw', publicKey);
+        localStorage.setItem('sobrkey_privatekey_raw', privateKey);
+        
+        // Also store encoded versions
+        const npub = window.NostrTools.nip19.npubEncode(publicKey);
+        const nsec = window.NostrTools.nip19.nsecEncode(privateKey);
+        localStorage.setItem('sobrkey_pubkey', npub);
+        localStorage.setItem('sobrkey_privatekey', nsec);
+        
+        // Update globals
+        userPubkey = publicKey;
+        userPrivkey = privateKey;
+        
+        log('Generated new keypair');
+        document.getElementById('advanced-result').textContent = 
+          `Generated new keypair:\nPubkey: ${publicKey.slice(0, 8)}...${publicKey.slice(-8)}\nPrivkey: ${privateKey.slice(0, 8)}...`;
+        
+        return { success: true, pubkey: publicKey, privkey: privateKey };
+      } catch (error) {
+        log(`Error generating keys: ${error.message}`, 'error');
+        document.getElementById('advanced-result').textContent = 
+          `Failed to generate keypair:\nError: ${error.message}`;
+        return { success: false, message: error.message };
+      }
+    }
+    
+    // Fetch all notes without filtering
+    async function fetchAllNotes() {
+      try {
+        if (!nostrPool) {
+          const init = await initializeNostr();
+          if (!init.success) throw new Error(init.message);
+        }
+        
+        const daysAgo = parseInt(document.getElementById('days-ago').value, 10);
+        const limit = parseInt(document.getElementById('limit').value, 10);
+        
+        // Calculate since timestamp
+        const since = Math.floor(Date.now() / 1000) - (daysAgo * 24 * 60 * 60);
+        
+        // Create filter for all notes (kind 1)
+        const filter = {
+          kinds: [1],
+          limit: limit,
+          since: since
+        };
+        
+        log(`Fetching all notes since ${new Date(since * 1000).toLocaleString()} (limit ${limit})`);
+        
+        // Fetch notes
+        let notes = [];
+        try {
+          notes = await Promise.race([
+            nostrPool.list(DEFAULT_RELAYS, [filter]),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("Query timeout")), 15000))
+          ]);
+        } catch (e) {
+          throw new Error(`Fetch timeout or error: ${e.message}`);
+        }
+        
+        log(`Found ${notes.length} notes`);
+        
+        // Display results
+        displayFetchResults(notes, filter);
+        
+        return notes;
+      } catch (error) {
+        log(`Error fetching notes: ${error.message}`, 'error');
+        document.getElementById('fetch-result').textContent = 
+          `Failed to fetch notes:\nError: ${error.message}`;
+        return [];
+      }
+    }
+    
+    // Fetch notes with sobrkey tag
+    async function fetchSobrkeyNotes() {
+      try {
+        if (!nostrPool) {
+          const init = await initializeNostr();
+          if (!init.success) throw new Error(init.message);
+        }
+        
+        const daysAgo = parseInt(document.getElementById('days-ago').value, 10);
+        const limit = parseInt(document.getElementById('limit').value, 10);
+        
+        // Calculate since timestamp
+        const since = Math.floor(Date.now() / 1000) - (daysAgo * 24 * 60 * 60);
+        
+        // Create filter for sobrkey tag
+        const filter = {
+          kinds: [1],
+          "#t": ["sobrkey"],
+          limit: limit,
+          since: since
+        };
+        
+        log(`Fetching notes with #t:sobrkey tag since ${new Date(since * 1000).toLocaleString()} (limit ${limit})`);
+        
+        // Fetch notes
+        let notes = [];
+        try {
+          notes = await Promise.race([
+            nostrPool.list(DEFAULT_RELAYS, [filter]),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("Query timeout")), 15000))
+          ]);
+        } catch (e) {
+          throw new Error(`Fetch timeout or error: ${e.message}`);
+        }
+        
+        log(`Found ${notes.length} notes with sobrkey tag`);
+        
+        // Display results
+        displayFetchResults(notes, filter);
+        
+        return notes;
+      } catch (error) {
+        log(`Error fetching notes with sobrkey tag: ${error.message}`, 'error');
+        document.getElementById('fetch-result').textContent = 
+          `Failed to fetch notes with sobrkey tag:\nError: ${error.message}`;
+        return [];
+      }
+    }
+    
+    // Fetch notes with #sobrkey hashtag
+    async function fetchHashtagNotes() {
+      try {
+        if (!nostrPool) {
+          const init = await initializeNostr();
+          if (!init.success) throw new Error(init.message);
+        }
+        
+        const daysAgo = parseInt(document.getElementById('days-ago').value, 10);
+        const limit = parseInt(document.getElementById('limit').value, 10);
+        
+        // Calculate since timestamp
+        const since = Math.floor(Date.now() / 1000) - (daysAgo * 24 * 60 * 60);
+        
+        // Create filter for #sobrkey hashtag
+        const filter = {
+          kinds: [1],
+          "#t": ["#sobrkey"],
+          limit: limit,
+          since: since
+        };
+        
+        log(`Fetching notes with #t:#sobrkey tag since ${new Date(since * 1000).toLocaleString()} (limit ${limit})`);
+        
+        // Fetch notes
+        let notes = [];
+        try {
+          notes = await Promise.race([
+            nostrPool.list(DEFAULT_RELAYS, [filter]),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("Query timeout")), 15000))
+          ]);
+        } catch (e) {
+          throw new Error(`Fetch timeout or error: ${e.message}`);
+        }
+        
+        log(`Found ${notes.length} notes with #sobrkey hashtag`);
+        
+        // Display results
+        displayFetchResults(notes, filter);
+        
+        return notes;
+      } catch (error) {
+        log(`Error fetching notes with #sobrkey hashtag: ${error.message}`, 'error');
+        document.getElementById('fetch-result').textContent = 
+          `Failed to fetch notes with #sobrkey hashtag:\nError: ${error.message}`;
+        return [];
+      }
+    }
+    
+    // Fetch notes with custom tag
+    async function fetchCustomTagNotes() {
+      try {
+        if (!nostrPool) {
+          const init = await initializeNostr();
+          if (!init.success) throw new Error(init.message);
+        }
+        
+        const daysAgo = parseInt(document.getElementById('days-ago').value, 10);
+        const limit = parseInt(document.getElementById('limit').value, 10);
+        const tagFormat = document.getElementById('tag-format').value;
+        const customTag = document.getElementById('custom-tag').value.trim();
+        
+        if (!customTag) {
+          throw new Error('Custom tag cannot be empty');
+        }
+        
+        // Calculate since timestamp
+        const since = Math.floor(Date.now() / 1000) - (daysAgo * 24 * 60 * 60);
+        
+        // Create filter with custom tag
+        const filter = {
+          kinds: [1],
+          limit: limit,
+          since: since
+        };
+        
+        // Add tag with specified format
+        filter[`#${tagFormat}`] = [customTag];
+        
+        log(`Fetching notes with #${tagFormat}:${customTag} since ${new Date(since * 1000).toLocaleString()} (limit ${limit})`);
+        
+        // Fetch notes
+        let notes = [];
+        try {
+          notes = await Promise.race([
+            nostrPool.list(DEFAULT_RELAYS, [filter]),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("Query timeout")), 15000))
+          ]);
+        } catch (e) {
+          throw new Error(`Fetch timeout or error: ${e.message}`);
+        }
+        
+        log(`Found ${notes.length} notes with custom tag`);
+        
+        // Display results
+        displayFetchResults(notes, filter);
+        
+        return notes;
+      } catch (error) {
+        log(`Error fetching notes with custom tag: ${error.message}`, 'error');
+        document.getElementById('fetch-result').textContent = 
+          `Failed to fetch notes with custom tag:\nError: ${error.message}`;
+        return [];
+      }
+    }
+    
+    // Display fetch results
+    function displayFetchResults(notes, filter) {
+      try {
+        const resultEl = document.getElementById('fetch-result');
+        
+        if (notes.length === 0) {
+          resultEl.textContent = `No notes found matching filter:\n${JSON.stringify(filter, null, 2)}`;
+          return;
+        }
+        
+        // Format notes for display
+        let resultText = `Found ${notes.length} notes with filter:\n${JSON.stringify(filter, null, 2)}\n\nResults:\n`;
+        
+        notes.slice(0, 10).forEach((note, i) => {
+          const date = new Date(note.created_at * 1000).toLocaleString();
+          const author = note.pubkey.slice(0, 8) + '...' + note.pubkey.slice(-4);
+          const content = note.content.length > 50 ? note.content.slice(0, 50) + '...' : note.content;
+          
+          resultText += `\n[${i+1}] ${date} by ${author}:\n${content}\n`;
+          
+          // Include tags
+          if (note.tags && note.tags.length > 0) {
+            resultText += `Tags: ${JSON.stringify(note.tags)}\n`;
+          }
+        });
+        
+        if (notes.length > 10) {
+          resultText += `\n...and ${notes.length - 10} more`;
+        }
+        
+        resultEl.textContent = resultText;
+      } catch (error) {
+        log(`Error displaying fetch results: ${error.message}`, 'error');
+        document.getElementById('fetch-result').textContent = 
+          `Error displaying results: ${error.message}`;
+      }
+    }
+    
+    // Publish a new note
+    async function publishNote() {
+      try {
+        if (!nostrPool) {
+          const init = await initializeNostr();
+          if (!init.success) throw new Error(init.message);
+        }
+        
+        if (!userPubkey || !userPrivkey) {
+          throw new Error('No keys available. Please generate or restore keys first.');
+        }
+        
+        const content = document.getElementById('note-content').value.trim();
+        if (!content) {
+          throw new Error('Note content cannot be empty');
+        }
+        
+        // Collect tags
+        const tags = [];
+        document.querySelectorAll('.tags .tag').forEach(tag => {
+          const tagText = tag.textContent.trim();
+          if (tagText) {
+            tags.push(['t', tagText]);
+          }
+        });
+        
+        // Create event
+        const event = {
+          kind: 1,
+          pubkey: userPubkey,
+          created_at: Math.floor(Date.now() / 1000),
+          tags: tags,
+          content: content
+        };
+        
+        // Add event ID
+        event.id = window.NostrTools.getEventHash(event);
+        
+        // Sign event
+        event.sig = window.NostrTools.signEvent(event, userPrivkey);
+        
+        log(`Publishing note with ${tags.length} tags...`);
+        
+        // Publish to relays
+        const pubs = nostrPool.publish(DEFAULT_RELAYS, event);
+        
+        // Wait for at least one relay to accept
+        const pub = await Promise.race([
+          Promise.any(pubs),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Publish timeout")), 15000))
+        ]);
+        
+        log(`Note published successfully to at least one relay`);
+        document.getElementById('publish-result').textContent = 
+          `Note published successfully!\nEvent ID: ${event.id}\nRelays: ${DEFAULT_RELAYS.join(', ')}\n\nContent: ${content}\nTags: ${JSON.stringify(tags)}`;
+        
+        return { success: true, event };
+      } catch (error) {
+        log(`Error publishing note: ${error.message}`, 'error');
+        document.getElementById('publish-result').textContent = 
+          `Failed to publish note:\nError: ${error.message}`;
+        return { success: false, message: error.message };
+      }
+    }
+    
+    // Clear form
+    function clearForm() {
+      document.getElementById('note-content').value = '';
+      document.querySelectorAll('.tags .tag').forEach(tag => {
+        if (tag.textContent.trim() !== 'sobrkey') {
+          tag.remove();
+        }
+      });
+      document.getElementById('publish-result').textContent = 'Form cleared';
+    }
+    
+    // Test relay connection
+    async function testRelay() {
+      try {
+        const relayUrl = document.getElementById('relay-url').value.trim();
+        if (!relayUrl) {
+          throw new Error('Relay URL cannot be empty');
+        }
+        
+        log(`Testing connection to relay: ${relayUrl}`);
+        
+        // Create a new relay connection
+        const { Relay } = window.NostrTools;
+        const relay = Relay.connect(relayUrl);
+        
+        // Wait for connection or timeout
+        const connectionResult = await Promise.race([
+          new Promise((resolve) => {
+            relay.on('connect', () => {
+              resolve({ connected: true });
+            });
+            relay.on('error', (err) => {
+              resolve({ connected: false, error: err.message });
+            });
+          }),
+          new Promise((resolve) => setTimeout(() => resolve({ connected: false, error: 'Connection timeout' }), 10000))
+        ]);
+        
+        if (connectionResult.connected) {
+          log(`Successfully connected to ${relayUrl}`);
+          
+          // Try basic query to verify functionality
+          const filter = { kinds: [1], limit: 1 };
+          let queryResult = { success: false };
+          
+          try {
+            const sub = relay.sub([filter]);
+            queryResult = await Promise.race([
+              new Promise((resolve) => {
+                const events = [];
+                sub.on('event', (event) => {
+                  events.push(event);
+                  if (events.length >= 1) {
+                    sub.close();
+                    resolve({ success: true, events });
+                  }
+                });
+                sub.on('eose', () => {
+                  sub.close();
+                  resolve({ success: true, events, eose: true });
+                });
+              }),
+              new Promise((resolve) => setTimeout(() => {
+                resolve({ success: false, error: 'Query timeout' });
+              }, 5000))
+            ]);
+          } catch (e) {
+            queryResult = { success: false, error: e.message };
+          }
+          
+          relay.close();
+          
+          // Display results
+          document.getElementById('relay-result').textContent = 
+            `Relay test for ${relayUrl}:\nConnection: Success\nQuery: ${queryResult.success ? 'Success' : 'Failed'}\n${
+              queryResult.events ? `Retrieved ${queryResult.events.length} events` : ''
+            }${queryResult.error ? `\nError: ${queryResult.error}` : ''}`;
+        } else {
+          log(`Failed to connect to ${relayUrl}: ${connectionResult.error}`, 'error');
+          document.getElementById('relay-result').textContent = 
+            `Relay test for ${relayUrl}:\nConnection: Failed\nError: ${connectionResult.error}`;
+        }
+        
+        return connectionResult;
+      } catch (error) {
+        log(`Error testing relay: ${error.message}`, 'error');
+        document.getElementById('relay-result').textContent = 
+          `Relay test failed:\nError: ${error.message}`;
+        return { connected: false, error: error.message };
+      }
+    }
+    
+    // Test all default relays
+    async function testAllRelays() {
+      try {
+        log(`Testing connections to all ${DEFAULT_RELAYS.length} default relays...`);
+        document.getElementById('relay-result').textContent = `Testing all relays... please wait`;
+        
+        const results = [];
+        
+        // Test each relay in sequence
+        for (const relayUrl of DEFAULT_RELAYS) {
+          try {
+            // Create a new relay connection
+            const { Relay } = window.NostrTools;
+            const relay = Relay.connect(relayUrl);
+            
+            // Wait for connection or timeout
+            const connectionResult = await Promise.race([
+              new Promise((resolve) => {
+                relay.on('connect', () => {
+                  resolve({ connected: true });
+                });
+                relay.on('error', (err) => {
+                  resolve({ connected: false, error: err.message });
+                });
+              }),
+              new Promise((resolve) => setTimeout(() => resolve({ connected: false, error: 'Connection timeout' }), 10000))
+            ]);
+            
+            if (connectionResult.connected) {
+              log(`Successfully connected to ${relayUrl}`);
+              
+              // Try basic query
+              try {
+                const sub = relay.sub([{ kinds: [1], limit: 1 }]);
+                const queryResult = await Promise.race([
+                  new Promise((resolve) => {
+                    const events = [];
+                    sub.on('event', (event) => {
+                      events.push(event);
+                      if (events.length >= 1) {
+                        sub.close();
+                        resolve({ success: true, events });
+                      }
+                    });
+                    sub.on('eose', () => {
+                      sub.close();
+                      resolve({ success: true, events, eose: true });
+                    });
+                  }),
+                  new Promise((resolve) => setTimeout(() => {
+                    resolve({ success: false, error: 'Query timeout' });
+                  }, 5000))
+                ]);
+                
+                results.push({
+                  relay: relayUrl,
+                  connected: true,
+                  querySuccess: queryResult.success,
+                  events: queryResult.events?.length || 0,
+                  error: queryResult.error
+                });
+              } catch (e) {
+                results.push({
+                  relay: relayUrl,
+                  connected: true,
+                  querySuccess: false,
+                  error: e.message
+                });
+              }
+            } else {
+              log(`Failed to connect to ${relayUrl}: ${connectionResult.error}`, 'error');
+              results.push({
+                relay: relayUrl,
+                connected: false,
+                error: connectionResult.error
+              });
+            }
+            
+            relay.close();
+          } catch (error) {
+            log(`Error testing relay ${relayUrl}: ${error.message}`, 'error');
+            results.push({
+              relay: relayUrl,
+              connected: false,
+              error: error.message
+            });
+          }
+        }
+        
+        // Format and display results
+        let resultText = `Relay Test Results:\n\n`;
+        results.forEach(result => {
+          resultText += `${result.relay}: ${result.connected ? '✅' : '❌'} ${result.connected ? 'Connected' : 'Failed'}\n`;
+          if (result.connected) {
+            resultText += `  Query: ${result.querySuccess ? '✅' : '❌'} ${result.querySuccess ? `Success (${result.events} events)` : 'Failed'}\n`;
+          }
+          if (result.error) {
+            resultText += `  Error: ${result.error}\n`;
+          }
+          resultText += '\n';
+        });
+        
+        // Calculate summary
+        const connectedCount = results.filter(r => r.connected).length;
+        const querySuccessCount = results.filter(r => r.connected && r.querySuccess).length;
+        resultText += `Summary: ${connectedCount}/${results.length} connected, ${querySuccessCount}/${results.length} query successful`;
+        
+        document.getElementById('relay-result').textContent = resultText;
+        log(`Completed testing all relays. ${connectedCount}/${results.length} connected.`);
+        
+        return results;
+      } catch (error) {
+        log(`Error testing all relays: ${error.message}`, 'error');
+        document.getElementById('relay-result').textContent = 
+          `Failed to test all relays:\nError: ${error.message}`;
+        return { success: false, error: error.message };
+      }
+    }
+    
+    // Get debug info
+    function getDebugInfo() {
+      try {
+        const debugInfo = {
+          browser: navigator.userAgent,
+          time: new Date().toISOString(),
+          nostrTools: !!window.NostrTools,
+          nostrPool: !!nostrPool,
+          hasKeys: !!userPubkey && !!userPrivkey,
+          localStorage: {},
+          relays: DEFAULT_RELAYS
+        };
+        
+        // Get Nostr-related local storage items
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('sobrkey_') || key.startsWith('nostr_')) {
+            if (key.includes('private') || key.includes('priv')) {
+              debugInfo.localStorage[key] = '[REDACTED]';
+            } else {
+              debugInfo.localStorage[key] = localStorage.getItem(key);
+            }
+          }
+        });
+        
+        // Get additional NostrTools info
+        if (window.NostrTools) {
+          debugInfo.nostrToolsKeys = Object.keys(window.NostrTools);
+        }
+        
+        log('Generated debug info');
+        document.getElementById('advanced-result').textContent = JSON.stringify(debugInfo, null, 2);
+        
+        return debugInfo;
+      } catch (error) {
+        log(`Error getting debug info: ${error.message}`, 'error');
+        document.getElementById('advanced-result').textContent = 
+          `Failed to get debug info:\nError: ${error.message}`;
+        return { success: false, error: error.message };
+      }
+    }
+    
+    // Clear local storage
+    function clearLocalStorage() {
+      try {
+        // Clear only Sobrkey-related items
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('sobrkey_')) {
+            localStorage.removeItem(key);
+          }
+        });
+        
+        // Reset globals
+        userPubkey = null;
+        userPrivkey = null;
+        
+        log('Cleared Sobrkey-related local storage items');
+        document.getElementById('advanced-result').textContent = 'Local storage cleared for Sobrkey items';
+        
+        return { success: true };
+      } catch (error) {
+        log(`Error clearing local storage: ${error.message}`, 'error');
+        document.getElementById('advanced-result').textContent = 
+          `Failed to clear local storage:\nError: ${error.message}`;
+        return { success: false, error: error.message };
+      }
+    }
+    
+    // Clear log
+    function clearLog() {
+      document.getElementById('debug-log').innerHTML = '';
+      log('Log cleared');
+    }
+    
+    // Add a tag
+    function addTag() {
+      try {
+        const tagContainer = document.querySelector('.tags');
+        const input = prompt('Enter tag name (without #):');
+        
+        if (input && input.trim()) {
+          const tagValue = input.trim();
+          
+          // Check if tag already exists
+          const existingTags = Array.from(document.querySelectorAll('.tags .tag'))
+            .map(tag => tag.textContent.trim().toLowerCase());
+            
+          if (existingTags.includes(tagValue.toLowerCase())) {
+            log(`Tag "${tagValue}" already exists`, 'warning');
+            return;
+          }
+          
+          // Create new tag element
+          const tag = document.createElement('span');
+          tag.className = 'tag';
+          tag.textContent = tagValue;
+          
+          // Add remove functionality
+          tag.addEventListener('click', function() {
+            if (tagValue.toLowerCase() !== 'sobrkey') { // Don't allow removing sobrkey tag
+              this.remove();
+            }
+          });
+          
+          // Add tag before the add button
+          tagContainer.insertBefore(tag, document.getElementById('add-tag'));
+          log(`Added tag: ${tagValue}`);
+        }
+      } catch (error) {
+        log(`Error adding tag: ${error.message}`, 'error');
+      }
+    }
+  </script>
+</body>
+</html>

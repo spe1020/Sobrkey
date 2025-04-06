@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sobrkey Tag Test</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1, h2 {
+      margin-top: 0;
+    }
+    .test-container {
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .log-container {
+      background: #222;
+      color: #8F8;
+      font-family: monospace;
+      padding: 15px;
+      border-radius: 3px;
+      margin-bottom: 20px;
+      height: 200px;
+      overflow-y: auto;
+    }
+    .log-line {
+      margin: 0;
+      padding: 2px 0;
+    }
+    .log-error {
+      color: #F88;
+    }
+    .log-info {
+      color: #88F;
+    }
+    .log-success {
+      color: #8F8;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 40px 0;
+      color: #666;
+    }
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 15px;
+    }
+    .post-list {
+      margin-top: 20px;
+    }
+    .post-card {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 15px;
+      margin-bottom: 10px;
+    }
+    .post-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .post-author {
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    .post-date {
+      color: #666;
+      font-size: 14px;
+    }
+    .post-content {
+      line-height: 1.5;
+    }
+    .post-tags {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .post-tag {
+      background: #eee;
+      padding: 3px 8px;
+      border-radius: 3px;
+      font-size: 14px;
+      color: #555;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-right: 8px;
+    }
+    button:hover {
+      background: #0069d9;
+    }
+    .test-buttons {
+      margin-bottom: 20px;
+    }
+    .tag-format {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      align-items: center;
+    }
+    select {
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+    }
+  </style>
+</head>
+<body>
+  <h1>Sobrkey Tag Test</h1>
+  <p>This page tests retrieving notes with the #sobrkey tag using different formats.</p>
+  
+  <div class="test-container">
+    <h2>Test Controls</h2>
+    
+    <div class="tag-format">
+      <label for="key-format">Tag Key Format:</label>
+      <select id="key-format">
+        <option value="#t">#t (Hash-T Format)</option>
+        <option value="t">t (T Format)</option>
+        <option value="combined">Combined (Try both)</option>
+      </select>
+      
+      <label for="tag-value">Tag Value:</label>
+      <select id="tag-value">
+        <option value="sobrkey">sobrkey</option>
+        <option value="#sobrkey">#sobrkey</option>
+      </select>
+    </div>
+    
+    <div class="test-buttons">
+      <button id="run-test">Run Test</button>
+      <button id="clear-log">Clear Log</button>
+      <button id="load-with-patch">Load With Patch</button>
+    </div>
+  </div>
+  
+  <div class="log-container" id="log-container"></div>
+  
+  <div class="post-list" id="post-list">
+    <div class="empty-state">
+      <div class="empty-icon">📝</div>
+      <div>Run a test to see posts</div>
+    </div>
+  </div>
+  
+  <!-- Load Nostr dependencies -->
+  <script src="/nostr-bundle.js"></script>
+  
+  <!-- Load application scripts -->
+  <script src="js/constants.js"></script>
+  <script src="js/nostr-utils.js"></script>
+  
+  <script>
+    // Test utilities
+    const log = {
+      container: document.getElementById('log-container'),
+      
+      add(message, type = 'normal') {
+        const line = document.createElement('p');
+        line.className = `log-line log-${type}`;
+        line.textContent = message;
+        this.container.appendChild(line);
+        this.container.scrollTop = this.container.scrollHeight;
+      },
+      
+      info(message) {
+        this.add(`ℹ️ ${message}`, 'info');
+      },
+      
+      error(message) {
+        this.add(`❌ ${message}`, 'error');
+      },
+      
+      success(message) {
+        this.add(`✅ ${message}`, 'success');
+      },
+      
+      clear() {
+        this.container.innerHTML = '';
+      }
+    };
+    
+    // Format a date relative to now
+    function formatRelativeTime(timestamp) {
+      const date = new Date(timestamp * 1000);
+      const now = new Date();
+      const diff = Math.floor((now - date) / 1000);
+      
+      if (diff < 60) return 'just now';
+      if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
+      if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+      if (diff < 2592000) return `${Math.floor(diff / 86400)} days ago`;
+      
+      return date.toLocaleDateString();
+    }
+    
+    // Display posts in the list
+    function displayPosts(notes) {
+      const postList = document.getElementById('post-list');
+      postList.innerHTML = '';
+      
+      if (!notes || notes.length === 0) {
+        postList.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🔍</div>
+            <div>No posts found with the selected tag format</div>
+          </div>
+        `;
+        return;
+      }
+      
+      notes.forEach(note => {
+        // Create post card
+        const postCard = document.createElement('div');
+        postCard.className = 'post-card';
+        
+        // Format author
+        const authorHex = note.pubkey;
+        const authorShort = `${authorHex.substring(0, 8)}...`;
+        
+        // Format content
+        const content = note.content;
+        
+        // Format tags
+        const tags = note.tags
+          .filter(tag => tag[0] === 't' || tag[0] === '#t')
+          .map(tag => `#${tag[1]}`);
+        
+        // Format date
+        const dateStr = formatRelativeTime(note.created_at);
+        
+        // Build HTML
+        postCard.innerHTML = `
+          <div class="post-header">
+            <div class="post-author">${authorShort}</div>
+            <div class="post-date">${dateStr}</div>
+          </div>
+          <div class="post-content">${content}</div>
+          ${tags.length > 0 ? `
+            <div class="post-tags">
+              ${tags.map(tag => `<span class="post-tag">${tag}</span>`).join('')}
+            </div>
+          ` : ''}
+        `;
+        
+        postList.appendChild(postCard);
+      });
+    }
+    
+    // Run the test with selected format
+    async function runTest() {
+      const keyFormat = document.getElementById('key-format').value;
+      const tagValue = document.getElementById('tag-value').value;
+      
+      log.clear();
+      log.info(`Starting test with key format: ${keyFormat}, tag value: ${tagValue}`);
+      
+      // Initialize Nostr
+      log.info('Initializing Nostr connection...');
+      try {
+        const initResult = await window.NostrUtils.initialize();
+        if (!initResult.success) {
+          log.error(`Failed to initialize Nostr: ${initResult.message}`);
+          return;
+        }
+        
+        log.success('Nostr initialized successfully');
+        
+        // Get relays
+        const nostrPool = window.NostrUtils.pool;
+        const relays = Array.isArray(nostrPool.relays) ? nostrPool.relays : 
+          (window.SobrKeyConstants?.DEFAULT_RELAYS || []);
+        
+        log.info(`Using relays: ${relays.join(', ')}`);
+        
+        // Create tag filters based on selected format
+        let tagFilters;
+        
+        if (keyFormat === 'combined') {
+          tagFilters = [
+            ["#t", tagValue],
+            ["t", tagValue]
+          ];
+          log.info('Using combined tag formats');
+        } else {
+          tagFilters = [[keyFormat, tagValue]];
+          log.info(`Using tag filter: ${JSON.stringify(tagFilters)}`);
+        }
+        
+        // Fetch notes
+        log.info('Fetching notes...');
+        const fetchResult = await window.NostrUtils.fetchNotes(tagFilters, 20);
+        
+        if (!fetchResult.success) {
+          log.error(`Failed to fetch notes: ${fetchResult.message}`);
+          return;
+        }
+        
+        const notes = fetchResult.notes || [];
+        
+        if (notes.length === 0) {
+          log.info('No notes found with the selected tag format');
+        } else {
+          log.success(`Found ${notes.length} notes with the selected tag format`);
+          
+          // Analyze the notes for tag formats
+          const tagFormats = {};
+          notes.forEach(note => {
+            note.tags.forEach(tag => {
+              if (tag[0] === 't' || tag[0] === '#t') {
+                const format = `${tag[0]}:${tag[1]}`;
+                if (!tagFormats[format]) tagFormats[format] = 0;
+                tagFormats[format]++;
+              }
+            });
+          });
+          
+          log.info('Tag formats found in notes:');
+          Object.entries(tagFormats).forEach(([format, count]) => {
+            log.info(`  - ${format}: ${count} occurrences`);
+          });
+        }
+        
+        // Display the posts
+        displayPosts(notes);
+        
+      } catch (error) {
+        log.error(`Error running test: ${error.message}`);
+        console.error(error);
+      }
+    }
+    
+    // Load the tag-fix-patch.js file dynamically
+    function loadPatch() {
+      log.info('Loading tag fix patch...');
+      
+      const script = document.createElement('script');
+      script.src = '/tag-fix-patch.js';
+      script.onload = () => {
+        log.success('Tag fix patch loaded successfully');
+      };
+      script.onerror = () => {
+        log.error('Failed to load tag fix patch');
+      };
+      
+      document.body.appendChild(script);
+    }
+    
+    // Set up event listeners
+    document.getElementById('run-test').addEventListener('click', runTest);
+    document.getElementById('clear-log').addEventListener('click', () => log.clear());
+    document.getElementById('load-with-patch').addEventListener('click', loadPatch);
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      log.info('Tag Test page initialized');
+      log.info('Select a tag format and click "Run Test" to begin');
+    });
+  </script>
+</body>
+</html>

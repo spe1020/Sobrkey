@@ -8,40 +8,27 @@ window.SobrKeyConstants = {
   APP_NAME: 'Sobrkey',
   APP_VERSION: '1.0.0',
 
-  // Default Relays
+  // Default Relays - optimized based on debug results
+  // Only using relays that successfully return notes with #sobrkey tag
   DEFAULT_RELAYS: [
-    'wss://relay.damus.io',
-    'wss://nos.lol',
-    'wss://relay.nostr.band',
-    'wss://relay.snort.social',
-    'wss://nostr.wine',
-    'wss://purplepag.es',
-    'wss://relay.current.fyi',
-    'wss://brb.io',
-    'wss://relay.nostr.bg',
-    'wss://nostr.fmt.wiz.biz',
-    'wss://relay.nostr.info'
+    'wss://relay.damus.io',  // Works well with #t format
+    'wss://nos.lol'          // Works well with #t format
   ],
 
   // Relay categories for different use cases
+  // Optimized to use only relays that work well with #sobrkey tag
   RELAY_CATEGORIES: {
     GENERAL: [
       'wss://relay.damus.io',
-      'wss://nos.lol',
-      'wss://relay.nostr.band',
-      'wss://relay.snort.social',
-      'wss://nostr.wine'
+      'wss://nos.lol'
     ],
     COMMUNITIES: [
-      'wss://purplepag.es',
-      'wss://relay.current.fyi',
-      'wss://relay.nostr.info',
-      'wss://relay.nostr.bg'
+      'wss://relay.damus.io',
+      'wss://nos.lol' 
     ],
     RECOVERY_FOCUSED: [
-      'wss://nostr.wine',
-      'wss://nos.lol',
-      'wss://relay.damus.io'
+      'wss://relay.damus.io',
+      'wss://nos.lol'
     ]
   },
 

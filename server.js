@@ -12,6 +12,9 @@ app.use(express.json());
 // Serve static files from public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Serve documentation files
+app.use('/docs', express.static(path.join(__dirname, 'docs')));
+
 // Serve the nostr-tools library from node_modules
 app.use('/lib/nostr-tools', express.static(path.join(__dirname, 'node_modules/nostr-tools/lib')));
 

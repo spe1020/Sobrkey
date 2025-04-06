@@ -1,72 +1,399 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sobrkey - Welcome</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>Sobrkey - Private Support for Your Journey</title>
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
-  <link rel="stylesheet" href="css/styles.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f5f7fa;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    
+    .logo {
+      max-width: 150px;
+      margin-bottom: 1rem;
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #6366F1;
+      margin-bottom: 1rem;
+    }
+    
+    p.subtitle {
+      font-size: 1.2rem;
+      color: #4B5563;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    
+    .cta-buttons {
+      margin-top: 2rem;
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    
+    .button {
+      display: inline-block;
+      background-color: #6366F1;
+      color: white;
+      font-weight: 600;
+      text-decoration: none;
+      padding: 0.8rem 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(99, 102, 241, 0.25);
+      transition: all 0.3s ease;
+    }
+    
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 7px 14px rgba(99, 102, 241, 0.3);
+    }
+    
+    .button.secondary {
+      background-color: white;
+      color: #6366F1;
+      border: 2px solid #6366F1;
+    }
+    
+    .button.small {
+      font-size: 0.9rem;
+      padding: 0.5rem 1rem;
+    }
+    
+    .features {
+      margin-top: 4rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+    
+    .feature {
+      background-color: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      transition: all 0.3s ease;
+    }
+    
+    .feature:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+    
+    .feature-icon {
+      margin-bottom: 1.5rem;
+      width: 50px;
+      height: 50px;
+      background-color: #EEF2FF;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #6366F1;
+    }
+    
+    .feature-icon svg {
+      width: 25px;
+      height: 25px;
+    }
+    
+    .feature h3 {
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
+      color: #1F2937;
+    }
+    
+    .feature p {
+      color: #6B7280;
+    }
+    
+    .testimonials {
+      margin-top: 5rem;
+      text-align: center;
+    }
+    
+    .testimonials h2 {
+      font-size: 2rem;
+      margin-bottom: 2rem;
+      color: #1F2937;
+    }
+    
+    .testimonial-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+    
+    .testimonial {
+      background-color: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      text-align: left;
+    }
+    
+    .testimonial p {
+      font-size: 1.1rem;
+      margin-bottom: 1.5rem;
+      color: #4B5563;
+    }
+    
+    .testimonial-author {
+      display: flex;
+      align-items: center;
+    }
+    
+    .author-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #EEF2FF;
+      margin-right: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #6366F1;
+    }
+    
+    .author-info h4 {
+      font-size: 1rem;
+      margin-bottom: 0.2rem;
+      color: #1F2937;
+    }
+    
+    .author-info p {
+      font-size: 0.9rem;
+      margin: 0;
+      color: #6B7280;
+    }
+    
+    .developer-tools {
+      margin-top: 2rem;
+      text-align: center;
+      padding: 1.5rem;
+      background-color: #f0f7ff;
+      border-radius: 12px;
+      border: 1px dashed #6366F1;
+    }
+    
+    .developer-tools h3 {
+      color: #4F46E5;
+      margin-bottom: 1rem;
+    }
+    
+    .dev-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.8rem;
+    }
+    
+    footer {
+      margin-top: 5rem;
+      text-align: center;
+      padding: 2rem 0;
+      color: #6B7280;
+      border-top: 1px solid #E5E7EB;
+    }
+    
+    footer p {
+      margin-bottom: 1rem;
+    }
+    
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+    }
+    
+    .footer-links a {
+      color: #6B7280;
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+    
+    .footer-links a:hover {
+      color: #6366F1;
+    }
+    
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2rem;
+      }
+      
+      p.subtitle {
+        font-size: 1rem;
+      }
+      
+      .features {
+        grid-template-columns: 1fr;
+      }
+      
+      .testimonial-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 <body>
   <div class="container">
-    <div class="welcome-container">
-      <div class="welcome-header">
-        <img src="assets/sobrkey-logo.png" alt="Sobrkey Logo" class="welcome-logo">
+    <header>
+      <img src="assets/sobrkey-logo.png" alt="Sobrkey Logo" class="logo">
+      <h1>Privacy-First Support for Recovery</h1>
+      <p class="subtitle">A secure, compassionate space for your journey, emphasizing privacy, control, and community.</p>
+      <div class="cta-buttons">
+        <a href="/journal" class="button">Try Sobrkey Now</a>
+        <a href="/about" class="button secondary">Learn More</a>
       </div>
-
-      <div class="welcome-content">
-        <h1>Welcome to Sobrkey</h1>
-        <p class="welcome-description">
-          A private, secure community for alcohol support, built on the decentralized Nostr protocol.
-        </p>
-
-        <div class="privacy-notice">
-          <div class="privacy-icon">🛡️</div>
-          <div class="privacy-text">
-            <h3>Your Privacy Matters</h3>
-            <p>Sobrkey is designed with privacy at its core. Your data is encrypted and only you control your keys and identity.</p>
-          </div>
+    </header>
+    
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
         </div>
-
-        <div class="welcome-actions">
-          <a href="/onboarding" class="btn btn-primary btn-large">
-            Create Account
-          </a>
-          <a href="/login" class="btn btn-secondary btn-large">
-            Sign In
-          </a>
-        </div>
-
-        <div class="welcome-features">
-          <div class="feature">
-            <div class="feature-icon">📝</div>
-            <div class="feature-text">
-              <h3>Private Journal</h3>
-              <p>Track your journey with encrypted journal entries only you can access</p>
-            </div>
-          </div>
-          <div class="feature">
-            <div class="feature-icon">🤖</div>
-            <div class="feature-text">
-              <h3>AI Support Guide</h3>
-              <p>Get compassionate therapeutic conversations when you need support</p>
-            </div>
-          </div>
-          <div class="feature">
-            <div class="feature-icon">👥</div>
-            <div class="feature-text">
-              <h3>Find Support</h3>
-              <p>Connect with meetings and resources to help your recovery journey</p>
-            </div>
-          </div>
-        </div>
+        <h3>Privacy-First Approach</h3>
+        <p>Your data is encrypted and only accessible to you. We use the decentralized Nostr protocol to ensure your journey remains private.</p>
       </div>
-
-      <div class="welcome-footer">
-        <p>Sobrkey &copy; 2025 - Privacy First, Always</p>
+      
+      <div class="feature">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+        </div>
+        <h3>Personal Journal</h3>
+        <p>Track your progress with private, encrypted journal entries that help document your journey and personal insights.</p>
+      </div>
+      
+      <div class="feature">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+        </div>
+        <h3>Supportive Community</h3>
+        <p>Connect with others on similar journeys through anonymous, secure forums and group discussions.</p>
+      </div>
+      
+      <div class="feature">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <h3>Meeting Finder</h3>
+        <p>Locate nearby support meetings and resources that match your preferences and requirements.</p>
+      </div>
+      
+      <div class="feature">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          </svg>
+        </div>
+        <h3>Emergency Support</h3>
+        <p>Quick access to crisis resources when needed most, including hotlines and immediate assistance options.</p>
+      </div>
+      
+      <div class="feature">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+          </svg>
+        </div>
+        <h3>AI-Powered Conversations</h3>
+        <p>Chat with Mira, our compassionate AI assistant designed to provide support and guidance on your journey.</p>
       </div>
     </div>
+    
+    <div class="developer-tools">
+      <h3>Developer & Testing Tools</h3>
+      <p style="margin-bottom: 1rem;">Resources to help developers and testers diagnose Nostr connectivity issues.</p>
+      <div class="dev-buttons">
+        <a href="/nostr-local-test.html" class="button small" target="_blank">Local Nostr Test Tool</a>
+        <a href="/community" class="button small secondary">Community Debug Panel</a>
+        <a href="/docs/nostr-api-update.md" class="button small" target="_blank">Nostr API Fix Documentation</a>
+        <a href="https://github.com/user/sobrkey" class="button small secondary">GitHub Repository</a>
+      </div>
+    </div>
+    
+    <div class="testimonials">
+      <h2>Stories from our Community</h2>
+      <div class="testimonial-grid">
+        <div class="testimonial">
+          <p>"Sobrkey gave me a private space to track my journey without fear of judgment. The journal feature helps me see my progress and identify triggers."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">A</div>
+            <div class="author-info">
+              <h4>Anonymous</h4>
+              <p>2 years sober</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="testimonial">
+          <p>"The community here understands what I'm going through. Being able to connect anonymously has made all the difference in my recovery journey."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">B</div>
+            <div class="author-info">
+              <h4>Anonymous</h4>
+              <p>6 months sober</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="testimonial">
+          <p>"I appreciate that I control my data and can track my progress privately. The meeting finder helped me find a group that actually works for me."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">C</div>
+            <div class="author-info">
+              <h4>Anonymous</h4>
+              <p>1 year sober</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <footer>
+      <p>&copy; 2025 Sobrkey. All rights reserved.</p>
+      <div class="footer-links">
+        <a href="/privacy">Privacy Policy</a>
+        <a href="/terms">Terms of Service</a>
+        <a href="/about">About Us</a>
+        <a href="/contact">Contact</a>
+      </div>
+    </footer>
   </div>
 </body>
 </html>

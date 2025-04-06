@@ -70,6 +70,75 @@
       debugFetchPosts();
     });
     
+    // Debug panel toggle
+    document.getElementById('toggle-debug')?.addEventListener('click', function() {
+      const debugPanel = document.getElementById('debug-panel');
+      if (debugPanel) {
+        const isDisplayed = debugPanel.style.display !== 'none';
+        debugPanel.style.display = isDisplayed ? 'none' : 'block';
+        this.textContent = isDisplayed ? 'Show Debug Panel' : 'Hide Debug Panel';
+      }
+    });
+    
+    // Fetch all notes button
+    document.getElementById('fetch-all-notes')?.addEventListener('click', async function() {
+      try {
+        document.getElementById('debug-output').textContent = 'Fetching all notes without tag filtering...';
+        
+        const result = await window.NostrUtils.fetchNotes(["all"], 20);
+        
+        const output = `
+          Fetched ${result.notes?.length || 0} notes without tag filtering.
+          Success: ${result.success}
+          Message: ${result.message}
+          ${result.notes && result.notes.length > 0 
+            ? `First note: ${JSON.stringify(result.notes[0].content.slice(0, 100))}...` 
+            : 'No notes found'}
+        `;
+        
+        document.getElementById('debug-output').textContent = output;
+      } catch (error) {
+        document.getElementById('debug-output').textContent = `Error: ${error.message}`;
+      }
+    });
+    
+    // Debug relays button
+    document.getElementById('debug-relays')?.addEventListener('click', async function() {
+      try {
+        document.getElementById('debug-output').textContent = 'Checking relay connections...';
+        
+        const nostrDebug = window.NostrUtils.debugNostr();
+        const pool = window.NostrUtils.pool;
+        
+        let output = '';
+        
+        if (nostrDebug.loaded) {
+          output += `NostrTools loaded: ${nostrDebug.loaded}\n`;
+          
+          if (pool) {
+            const relays = Array.from(pool.relays.keys());
+            output += `Connected relays (${relays.length}):\n`;
+            relays.forEach(relay => {
+              output += `- ${relay}\n`;
+            });
+          } else {
+            output += 'Pool not initialized\n';
+          }
+          
+          output += `\nStorage state:\n`;
+          for (const [key, value] of Object.entries(nostrDebug.storageState)) {
+            output += `- ${key}: ${value}\n`;
+          }
+        } else {
+          output += `Error: ${nostrDebug.message}`;
+        }
+        
+        document.getElementById('debug-output').textContent = output;
+      } catch (error) {
+        document.getElementById('debug-output').textContent = `Error: ${error.message}`;
+      }
+    });
+    
     // Make post content textarea auto-expand
     const postContent = document.getElementById('post-content');
     if (postContent) {
@@ -101,7 +170,8 @@
         [["#t", "sobrkey"]],
         [["t", "#sobrkey"]],
         [["t", "sobrkey"], ["t", "recovery"]],
-        [["keyword", "sobrkey"]]
+        [["keyword", "sobrkey"]],
+        ["all"] // Special mode to get all posts without filtering
       ];
       
       // Test message
@@ -143,8 +213,27 @@
         debugMessage += `Direct query error: ${e.message}\n`;
       }
       
-      // Display debug info
-      alert(debugMessage);
+      // Display debug info in debug panel if it exists
+      const debugOutput = document.getElementById('debug-output');
+      if (debugOutput) {
+        debugOutput.textContent = debugMessage;
+        
+        // Make sure debug panel is visible
+        const debugPanel = document.getElementById('debug-panel');
+        if (debugPanel) {
+          debugPanel.style.display = 'block';
+          
+          // Update toggle button text
+          const toggleButton = document.getElementById('toggle-debug');
+          if (toggleButton) {
+            toggleButton.textContent = 'Hide Debug Panel';
+          }
+        }
+      } else {
+        // Fallback to alert if debug panel doesn't exist
+        alert(debugMessage);
+      }
+      
       console.log(debugMessage);
       
     } catch (error) {
@@ -184,6 +273,12 @@
       if (!fetchResult.success || (fetchResult.notes && fetchResult.notes.length === 0)) {
         console.log('No posts found with regular tag, trying hashtag variant...');
         fetchResult = await window.NostrUtils.fetchNotes([["t", `#${appTag}`]], LOAD_LIMIT);
+      }
+      
+      // If still no results, try fetching all notes without any tag filtering
+      if (!fetchResult.success || (fetchResult.notes && fetchResult.notes.length === 0)) {
+        console.log('No posts found with tag filtering, trying to fetch ALL notes...');
+        fetchResult = await window.NostrUtils.fetchNotes(["all"], LOAD_LIMIT);
       }
       
       // Check for success or no posts
