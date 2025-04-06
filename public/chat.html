@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sobrkey - Chat with Mira</title>
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+  <script src="js/constants.js"></script>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/journal.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="js/nostr.bundle.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="header-left">
+        <button class="menu-button" id="sidebarToggle">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <h1>Chat with Mira</h1>
+      </div>
+      <div class="header-right">
+        <div class="streak-counter">
+          <span id="streak-count">0</span> day streak
+        </div>
+      </div>
+    </header>
+    
+    <div class="app-content">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <img src="assets/sobrkey-logo.png" alt="Sobrkey Logo" height="40">
+        </div>
+        <nav class="sidebar-nav">
+          <ul>
+            <li>
+              <a href="/journal">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                  <path d="M8 10h8M8 14h8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                Journal
+              </a>
+            </li>
+            <li class="active">
+              <a href="/chat">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                  <path d="M9 10h.01M12 10h.01M15 10h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                Chat with Mira
+              </a>
+            </li>
+            <li>
+              <a href="/community">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                Community
+              </a>
+            </li>
+            <li>
+              <a href="/meetings">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                  <path d="M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                Meetings
+              </a>
+            </li>
+            <li>
+              <a href="/support">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                  <path d="M12 16v-4M12 8h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                Support
+              </a>
+            </li>
+            <li>
+              <a href="/emergency">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                  <path d="M12 10v4M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                Emergency
+              </a>
+            </li>
+          </ul>
+        </nav>
+        <div class="sidebar-footer">
+          <a href="/settings" class="settings-link">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            Settings
+          </a>
+        </div>
+      </aside>
+      
+      <main class="main-content">
+        <div class="journal-container">
+          <section class="ai-chat-section">
+            <div class="section-header">
+              <h2>Chat with Mira</h2>
+              <p class="date-display" id="current-date">April 5, 2025</p>
+            </div>
+            
+            <div class="chat-container">
+              <div class="chat-messages" id="chat-messages">
+                <div class="message ai-message">
+                  <div class="message-avatar">
+                    <img src="assets/mira-avatar.png" alt="Mira Avatar">
+                  </div>
+                  <div class="message-content">
+                    <p>Hello, I'm Mira, your supportive AI companion. How are you feeling today?</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="chat-input">
+                <textarea id="message-input" placeholder="Type your message here..."></textarea>
+                <button id="send-message" class="btn btn-primary">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+  
+  <script>
+    // Check if user has completed onboarding
+    document.addEventListener('DOMContentLoaded', function() {
+      // Set current date
+      const dateElement = document.getElementById('current-date');
+      const now = new Date();
+      dateElement.textContent = now.toLocaleDateString('en-US', { 
+        month: 'long', 
+        day: 'numeric', 
+        year: 'numeric' 
+      });
+      
+      // Check for onboarding completion
+      if (localStorage.getItem('sobrkey_onboarding_complete') !== 'true') {
+        // User hasn't completed onboarding, redirect to welcome page
+        window.location.href = '/';
+        return;
+      }
+      
+      // Load user data
+      const pubkey = localStorage.getItem('sobrkey_pubkey');
+      if (!pubkey) {
+        // No public key, redirect to welcome page
+        window.location.href = '/';
+        return;
+      }
+      
+      // Setup send message functionality
+      document.getElementById('send-message').addEventListener('click', sendMessage);
+      document.getElementById('message-input').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+      
+      // Toggle sidebar on mobile
+      document.getElementById('sidebarToggle').addEventListener('click', function() {
+        document.querySelector('.sidebar').classList.toggle('active');
+      });
+    });
+    
+    // Send a message to Mira
+    async function sendMessage() {
+      const messageInput = document.getElementById('message-input');
+      const message = messageInput.value.trim();
+      
+      if (!message) return;
+      
+      // Clear the input
+      messageInput.value = '';
+      
+      // Add user message to chat
+      addMessageToChat('user', message);
+      
+      try {
+        // Send message to Mira via API
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ 
+            message,
+            // Could add conversation history here for context
+            history: []
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to get response from Mira');
+        }
+        
+        const data = await response.json();
+        
+        // Add Mira's response to chat
+        addMessageToChat('ai', data.response);
+        
+      } catch (error) {
+        console.error('Error sending message:', error);
+        addMessageToChat('ai', 'I apologize, but I encountered an error. Please try again later.');
+      }
+    }
+    
+    // Add a message to the chat interface
+    function addMessageToChat(type, content) {
+      const chatMessages = document.getElementById("chat-messages");
+      
+      const messageDiv = document.createElement("div");
+      messageDiv.className = `message ${type}-message`;
+      
+      // Add avatar for both AI and user messages
+      const avatarDiv = document.createElement("div");
+      avatarDiv.className = "message-avatar";
+      
+      const avatarImg = document.createElement("img");
+      if (type === "ai") {
+        avatarImg.src = "assets/mira-avatar.png";
+        avatarImg.alt = "Mira Avatar";
+      } else {
+        avatarImg.src = "assets/user-avatar.png";
+        avatarImg.alt = "Your Avatar";
+      }
+      
+      avatarDiv.appendChild(avatarImg);
+      messageDiv.appendChild(avatarDiv);
+      
+      const contentDiv = document.createElement("div");
+      contentDiv.className = "message-content";
+      
+      const paragraph = document.createElement("p");
+      paragraph.textContent = content;
+      
+      contentDiv.appendChild(paragraph);
+      messageDiv.appendChild(contentDiv);
+      
+      chatMessages.appendChild(messageDiv);
+      
+      // Auto-scroll to the bottom
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+  </script>
+</body>
+</html>

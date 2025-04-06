@@ -1,0 +1,97 @@
+# OBJECTIVE
+
+Create a privacy-focused, Nostr-based mobile app called "NostrCare" for alcohol support and recovery. The app allows anonymous participation in encrypted group chats (meetings), private journaling, peer check-ins, and emergency support requests — inspired by Alcoholics Anonymous but built for decentralized, mobile-first support.
+
+# TECH STACK
+
+- React Native with Expo (for cross-platform mobile deployment)
+- JavaScript or TypeScript
+- Tailwind CSS via NativeWind (or basic StyleSheet for styling)
+- Nostr protocol using `nostr-tools` library
+- Local secure storage (for keypair) using Expo SecureStore
+- NIP-04 for encryption (initially)
+- Relay communication using public/private Nostr relays
+
+# FILE STRUCTURE
+
+Organize the app as follows:
+
+- `/screens/` for screen components (Home, Journal, Meeting, Support, Emergency)
+- `/components/` for UI elements (Button, Input, Header)
+- `/nostr/` for all Nostr-specific utilities (encryption, event creation, relay handling)
+- `/lib/` for utilities like date formatting, storage, etc.
+
+# MVP FEATURES
+
+1. 🔐 Anonymous Identity Setup
+   - Generate a Nostr keypair on first launch.
+   - Store keypair securely on device using Expo SecureStore.
+   - Optional: allow user to import an existing key.
+
+2. 🧘 Home Screen UI
+   - “Daily Check-In” (logs encrypted check-in event)
+   - “Join Meeting” (navigates to encrypted chat)
+   - “Journal” (navigates to encrypted private note screen)
+   - “Support” (shows list of peers and allows private encrypted threads)
+   - “Emergency” (sends encrypted help message to trusted contacts)
+
+3. 📝 Daily Journal
+   - Encrypted private note using NIP-04
+   - Replaceable per-day entry (use NIP-33 style tag)
+
+4. 🤝 Support Threads
+   - Send encrypted message to peer pubkey
+   - Load conversation from relevant event threads
+
+5. 📍 Check-In Tracker
+   - Post encrypted "check-in" event daily
+   - Locally calculate streak (based on event dates)
+
+6. 💬 Encrypted Meeting Room (Group Chat)
+   - Text-based, scoped to a meeting ID
+   - All messages encrypted with shared symmetric key
+   - Display basic timestamps and pubkey nicknames (optional)
+
+7. 🚨 Emergency Button
+   - Send encrypted alert to list of trusted pubkeys
+   - Include timestamp + optional note
+
+# ENCRYPTION
+
+Use `nostr-tools` to:
+- Encrypt messages with NIP-04 (private DM)
+- Store notes/events encrypted before posting
+- Handle decryption and filtering of incoming events from relays
+
+# RELAYS
+
+Use a list of default relays (e.g. `wss://relay.damus.io`) and allow custom configuration in settings (later feature).
+
+# STYLING & UX
+
+- Simple, calming design — avoid clutter.
+- Use Tailwind-style layout or StyleSheet with clear spacing.
+- Buttons and inputs must be accessible and mobile-friendly.
+- Font: Use a readable sans-serif (system default is fine).
+- Keep colors neutral or soft (blues, grays, white).
+
+# NON-GOALS (for now)
+
+- No media uploads
+- No voice/video chat
+- No centralized auth or cloud sync
+- No public posting features
+
+# NEXT STEPS
+
+1. Scaffold the React Native app with Expo.
+2. Build onboarding flow: generate/store keypair.
+3. Implement home screen layout and navigation.
+4. Set up Nostr utility functions (key mgmt, encryption, send/receive events).
+5. Add Journal screen — first full feature (UI + event creation).
+6. Build out remaining MVP screens.
+
+# OUTPUT
+
+Push all code to a single Replit project using the folder structure above. Ensure everything compiles in the Replit mobile preview or simulator.
+

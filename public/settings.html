@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sobrkey - Settings</title>
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="css/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="header-left">
+        <button class="menu-button" id="sidebarToggle">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <h1>Settings</h1>
+      </div>
+      <div class="header-right">
+        <div class="streak-counter">
+          <span id="streak-count">0</span> day streak
+        </div>
+      </div>
+    </header>
+    
+    <div class="app-content">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <img src="assets/sobrkey-logo.png" alt="Sobrkey Logo" height="40">
+        </div>
+        <nav class="sidebar-nav">
+          <ul>
+            <li>
+              <a href="/journal">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                  <path d="M8 10h8M8 14h8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                Journal
+              </a>
+            </li>
+            <li>
+              <a href="/chat">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                  <path d="M9 10h.01M12 10h.01M15 10h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                Chat with Mira
+              </a>
+            </li>
+            <li>
+              <a href="/community">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                Community
+              </a>
+            </li>
+            <li>
+              <a href="/meetings">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M17 20l-5-5 5-5M8 9l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                Meetings
+              </a>
+            </li>
+            <li>
+              <a href="/support">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                  <path d="M12 16v-4M12 8h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                Support
+              </a>
+            </li>
+            <li>
+              <a href="/emergency">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                  <path d="M12 10v4M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                Emergency
+              </a>
+            </li>
+          </ul>
+        </nav>
+        <div class="sidebar-footer">
+          <a href="/settings" class="settings-link active">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            Settings
+          </a>
+        </div>
+      </aside>
+      
+      <main class="main-content">
+        <div class="settings-container">
+          <section class="settings-section">
+            <h2>Account Settings</h2>
+            
+            <div class="settings-group">
+              <h3>Profile Information</h3>
+              <div class="setting-item">
+                <div class="setting-label">
+                  <label for="display-name">Display Name</label>
+                  <p class="setting-description">This name will be visible to others in the community</p>
+                </div>
+                <div class="setting-control">
+                  <input type="text" id="display-name" class="form-control" placeholder="Your display name">
+                </div>
+              </div>
+            </div>
+            
+            <div class="settings-group">
+              <h3>Privacy</h3>
+              <div class="setting-item">
+                <div class="setting-label">
+                  <label>Nostr Public Key</label>
+                  <p class="setting-description">Your unique identifier on the Nostr network</p>
+                </div>
+                <div class="setting-control">
+                  <div class="key-display" id="public-key-display">
+                    <span id="public-key">Loading...</span>
+                    <button class="copy-btn" id="copy-pubkey">Copy</button>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="setting-item">
+                <div class="setting-label">
+                  <label for="backup-key">Backup Private Key</label>
+                  <p class="setting-description">Back up your private key to ensure you don't lose access to your account</p>
+                </div>
+                <div class="setting-control">
+                  <button class="btn btn-secondary" id="show-private-key">View Private Key</button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="settings-group">
+              <h3>Preferences</h3>
+              <div class="setting-item">
+                <div class="setting-label">
+                  <label for="theme-select">App Theme</label>
+                  <p class="setting-description">Choose the visual theme for the app</p>
+                </div>
+                <div class="setting-control">
+                  <select id="theme-select" class="form-control">
+                    <option value="dark">Dark Mode</option>
+                    <option value="light">Light Mode (Coming Soon)</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div class="setting-item">
+                <div class="setting-label">
+                  <label>Notifications</label>
+                  <p class="setting-description">Manage your notification preferences</p>
+                </div>
+                <div class="setting-control">
+                  <div class="toggle-wrapper">
+                    <input type="checkbox" id="notifications-toggle" class="toggle-input">
+                    <label for="notifications-toggle" class="toggle-label"></label>
+                    <span class="toggle-status">Disabled</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="settings-group">
+              <h3>Danger Zone</h3>
+              <div class="setting-item">
+                <div class="setting-label">
+                  <label>Clear All Data</label>
+                  <p class="setting-description">Delete all local data and reset the app (this won't delete data from the Nostr network)</p>
+                </div>
+                <div class="setting-control">
+                  <button class="btn btn-danger" id="clear-data-btn">Clear All Data</button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="settings-footer">
+              <button class="btn btn-primary" id="save-settings">Save Settings</button>
+            </div>
+          </section>
+          
+          <section class="settings-section">
+            <h2>Nostr Relay Management</h2>
+            <p class="section-description">Manage the Nostr relays you connect to for sending and receiving data.</p>
+            
+            <div class="relay-list" id="relay-list">
+              <div class="relay-item">
+                <div class="relay-info">
+                  <span class="relay-url">wss://relay.damus.io</span>
+                  <span class="relay-status connected">Connected</span>
+                </div>
+                <div class="relay-actions">
+                  <button class="btn btn-sm btn-secondary">Remove</button>
+                </div>
+              </div>
+              
+              <div class="relay-item">
+                <div class="relay-info">
+                  <span class="relay-url">wss://relay.nostr.band</span>
+                  <span class="relay-status connected">Connected</span>
+                </div>
+                <div class="relay-actions">
+                  <button class="btn btn-sm btn-secondary">Remove</button>
+                </div>
+              </div>
+              
+              <div class="relay-item">
+                <div class="relay-info">
+                  <span class="relay-url">wss://nostr.wine</span>
+                  <span class="relay-status connected">Connected</span>
+                </div>
+                <div class="relay-actions">
+                  <button class="btn btn-sm btn-secondary">Remove</button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="relay-add">
+              <input type="text" class="form-control" id="new-relay-url" placeholder="wss://new-relay-url">
+              <button class="btn btn-primary" id="add-relay-btn">Add Relay</button>
+            </div>
+          </section>
+          
+          <section class="settings-section">
+            <h2>About Sobrkey</h2>
+            <div class="about-info">
+              <p>Version: 1.0.0</p>
+              <p>A privacy-focused community for alcohol support, built on the decentralized Nostr protocol.</p>
+              <p>Your data is encrypted and only you control your keys and identity.</p>
+              
+              <div class="about-links">
+                <a href="#" class="about-link">Privacy Policy</a>
+                <a href="#" class="about-link">Terms of Service</a>
+                <a href="#" class="about-link">Contact Support</a>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+  
+  <script>
+    // Check if user has completed onboarding
+    document.addEventListener('DOMContentLoaded', function() {
+      // Check for onboarding completion
+      if (localStorage.getItem('sobrkey_onboarding_complete') !== 'true') {
+        // User hasn't completed onboarding, redirect to welcome page
+        window.location.href = '/';
+        return;
+      }
+      
+      // Toggle sidebar on mobile
+      document.getElementById('sidebarToggle').addEventListener('click', function() {
+        document.querySelector('.sidebar').classList.toggle('active');
+      });
+      
+      // Display public key
+      const pubkey = localStorage.getItem('sobrkey_pubkey');
+      if (pubkey) {
+        document.getElementById('public-key').textContent = pubkey;
+      }
+      
+      // Copy public key
+      document.getElementById('copy-pubkey').addEventListener('click', function() {
+        const publicKey = document.getElementById('public-key').textContent;
+        navigator.clipboard.writeText(publicKey).then(function() {
+          this.textContent = 'Copied!';
+          setTimeout(() => {
+            this.textContent = 'Copy';
+          }, 2000);
+        }.bind(this));
+      });
+      
+      // Show private key with confirmation
+      document.getElementById('show-private-key').addEventListener('click', function() {
+        if (confirm('Warning: Your private key is sensitive information. Never share it with anyone. Make sure no one is watching your screen. Do you want to continue?')) {
+          const privateKey = localStorage.getItem('sobrkey_privatekey');
+          
+          // Create modal to show private key
+          const modal = document.createElement('div');
+          modal.className = 'modal';
+          modal.innerHTML = `
+            <div class="modal-content">
+              <span class="modal-close">&times;</span>
+              <h3>Your Private Key</h3>
+              <p class="modal-warning">Do not share this with anyone! Anyone with this key can access your account.</p>
+              <div class="key-display">
+                <span>${privateKey || 'Not found'}</span>
+                <button class="copy-btn" id="copy-privkey">Copy</button>
+              </div>
+            </div>
+          `;
+          
+          document.body.appendChild(modal);
+          
+          // Close modal functionality
+          modal.querySelector('.modal-close').addEventListener('click', function() {
+            document.body.removeChild(modal);
+          });
+          
+          // Copy private key
+          modal.querySelector('#copy-privkey').addEventListener('click', function() {
+            navigator.clipboard.writeText(privateKey).then(function() {
+              this.textContent = 'Copied!';
+              setTimeout(() => {
+                this.textContent = 'Copy';
+              }, 2000);
+            }.bind(this));
+          });
+        }
+      });
+      
+      // Toggle notifications (placeholder)
+      document.getElementById('notifications-toggle').addEventListener('change', function() {
+        const statusElement = this.parentElement.querySelector('.toggle-status');
+        if (this.checked) {
+          statusElement.textContent = 'Enabled';
+        } else {
+          statusElement.textContent = 'Disabled';
+        }
+      });
+      
+      // Clear all data
+      document.getElementById('clear-data-btn').addEventListener('click', function() {
+        if (confirm('Are you sure you want to clear all data? This action cannot be undone.')) {
+          // Clear localStorage
+          Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('sobrkey_')) {
+              localStorage.removeItem(key);
+            }
+          });
+          
+          alert('All data has been cleared. You will now be redirected to the welcome page.');
+          window.location.href = '/';
+        }
+      });
+      
+      // Save settings (placeholder)
+      document.getElementById('save-settings').addEventListener('click', function() {
+        const displayName = document.getElementById('display-name').value;
+        const theme = document.getElementById('theme-select').value;
+        const notificationsEnabled = document.getElementById('notifications-toggle').checked;
+        
+        // Save to localStorage (in a real app, you might save to the server or elsewhere)
+        localStorage.setItem('sobrkey_display_name', displayName);
+        localStorage.setItem('sobrkey_theme', theme);
+        localStorage.setItem('sobrkey_notifications_enabled', notificationsEnabled);
+        
+        alert('Settings saved successfully!');
+      });
+      
+      // Add relay (placeholder)
+      document.getElementById('add-relay-btn').addEventListener('click', function() {
+        const relayUrl = document.getElementById('new-relay-url').value;
+        
+        if (!relayUrl) {
+          alert('Please enter a relay URL');
+          return;
+        }
+        
+        if (!relayUrl.startsWith('wss://')) {
+          alert('Relay URL must start with wss://');
+          return;
+        }
+        
+        alert(`This would add the relay: ${relayUrl} (functionality coming soon)`);
+        document.getElementById('new-relay-url').value = '';
+      });
+    });
+  </script>
+  
+  <style>
+    .settings-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+    
+    .settings-section {
+      background-color: var(--background-lighter);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+    }
+    
+    .settings-section h2 {
+      color: var(--primary-color);
+      margin: 0 0 20px 0;
+      font-size: 1.6rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 15px;
+    }
+    
+    .section-description {
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+    }
+    
+    .settings-group {
+      margin-bottom: 30px;
+    }
+    
+    .settings-group h3 {
+      font-size: 1.2rem;
+      margin: 0 0 15px 0;
+      color: var(--text-primary);
+    }
+    
+    .setting-item {
+      display: flex;
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .setting-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    
+    .setting-label {
+      flex: 1;
+    }
+    
+    .setting-label label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 5px;
+      color: var(--text-primary);
+    }
+    
+    .setting-description {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin: 0;
+    }
+    
+    .setting-control {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    
+    /* Toggle switch */
+    .toggle-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    
+    .toggle-input {
+      height: 0;
+      width: 0;
+      visibility: hidden;
+      position: absolute;
+    }
+    
+    .toggle-label {
+      display: block;
+      width: 50px;
+      height: 28px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 100px;
+      position: relative;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    
+    .toggle-label:after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 22px;
+      height: 22px;
+      background: #fff;
+      border-radius: 50%;
+      transition: 0.3s;
+    }
+    
+    .toggle-input:checked + .toggle-label {
+      background: var(--primary-color);
+    }
+    
+    .toggle-input:checked + .toggle-label:after {
+      left: calc(100% - 3px);
+      transform: translateX(-100%);
+    }
+    
+    .toggle-status {
+      margin-left: 10px;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+    
+    /* Button styles */
+    .btn-danger {
+      background-color: var(--error-color);
+      color: white;
+    }
+    
+    .btn-danger:hover {
+      background-color: rgba(255, 74, 74, 0.8);
+    }
+    
+    /* Key display */
+    .key-display {
+      background-color: rgba(0, 0, 0, 0.2);
+      padding: 10px;
+      border-radius: 8px;
+      font-family: monospace;
+      word-break: break-all;
+      position: relative;
+      padding-right: 70px;
+      font-size: 0.9rem;
+    }
+    
+    .copy-btn {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background-color: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 5px 10px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .copy-btn:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    /* Relay management */
+    .relay-list {
+      margin-bottom: 20px;
+    }
+    
+    .relay-item {
+      background-color: var(--background-light);
+      border-radius: 8px;
+      padding: 12px 15px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .relay-url {
+      font-family: monospace;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      margin-right: 10px;
+    }
+    
+    .relay-status {
+      font-size: 0.8rem;
+      padding: 3px 8px;
+      border-radius: 10px;
+    }
+    
+    .relay-status.connected {
+      background-color: rgba(69, 209, 117, 0.2);
+      color: var(--success-color);
+    }
+    
+    .relay-status.disconnected {
+      background-color: rgba(255, 74, 74, 0.2);
+      color: var(--error-color);
+    }
+    
+    .relay-add {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .relay-add .form-control {
+      flex: 1;
+    }
+    
+    /* About section */
+    .about-info {
+      color: var(--text-secondary);
+    }
+    
+    .about-links {
+      margin-top: 20px;
+      display: flex;
+      gap: 20px;
+    }
+    
+    .about-link {
+      color: var(--primary-color);
+      text-decoration: none;
+    }
+    
+    .about-link:hover {
+      text-decoration: underline;
+    }
+    
+    /* Modal */
+    .modal {
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal-content {
+      background-color: var(--background-lighter);
+      margin: auto;
+      padding: 30px;
+      border-radius: 16px;
+      max-width: 600px;
+      width: 90%;
+      position: relative;
+    }
+    
+    .modal-close {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      color: var(--text-secondary);
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    
+    .modal-warning {
+      color: var(--error-color);
+      margin-bottom: 15px;
+    }
+    
+    /* Settings footer */
+    .settings-footer {
+      margin-top: 30px;
+      display: flex;
+      justify-content: flex-end;
+    }
+    
+    @media (max-width: 768px) {
+      .setting-item {
+        flex-direction: column;
+      }
+      
+      .setting-label {
+        margin-bottom: 15px;
+      }
+      
+      .setting-control {
+        justify-content: flex-start;
+      }
+      
+      .relay-add {
+        flex-direction: column;
+      }
+    }
+  </style>
+</body>
+</html>

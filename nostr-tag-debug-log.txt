@@ -1,0 +1,339 @@
+Sobrkey Nostr Tag Debug Log - 2025-04-06T15:02:26.376Z
+
+=== SOBRKEY NOSTR TAG DEBUGGER ===
+Testing tag: #sobrkey
+Date: 2025-04-06T15:02:26.388Z
+Target relays: wss://relay.damus.io, wss://nos.lol, wss://relay.nostr.social, wss://relay.nostr.band, wss://relay.snort.social, wss://nostr.wine
+======================================
+
+=== TESTING TAG QUERY FORMATS ===
+
+Testing relay: wss://relay.damus.io
+--------------------------------------------------
+
+• Format: Standard "#t" tag array
+  Filter: {"kinds":[1],"limit":20,"#t":["sobrkey"]}
+  Results: 14 notes found
+  First result:
+  ID: 1c877c7faa...
+Tags: #sobrkey
+Author: 57959cf4...
+Content: Good Night
+Created: 4/5/2025, 10:10:22 PM
+  ✓ Has sobrkey tag: YES
+
+• Format: Direct "t" tag array
+  Filter: {"kinds":[1],"limit":20,"t":["sobrkey"]}
+  Results: 0 notes found
+
+• Format: Hashtag format
+  Filter: {"kinds":[1],"limit":20,"#t":["#sobrkey"]}
+  Results: 1 notes found
+  First result:
+  ID: a82c085a7f...
+Tags: #sobrkey, ##sobrkey, ##milestone, ##sobrkey, ##mindfulness, ##sobrkey, ##meditation
+Author: 57959cf4...
+Content: please read
+Created: 4/5/2025, 3:51:49 PM
+  ✓ Has sobrkey tag: YES
+
+• Format: Combined tag formats
+  Filter: {"kinds":[1],"limit":20,"#t":["sobrkey"],"t":["sobrkey"]}
+  Results: 0 notes found
+
+• Format: Event tags format
+  Filter: {"kinds":[1],"limit":20,"e":["sobrkey"]}
+  Results: 0 notes found
+
+• Format: Last 30 days
+  Filter: {"kinds":[1],"limit":20,"#t":["sobrkey"],"since":1741359746}
+  Results: 14 notes found
+  First result:
+  ID: 1c877c7faa...
+Tags: #sobrkey
+Author: 57959cf4...
+Content: Good Night
+Created: 4/5/2025, 10:10:22 PM
+  ✓ Has sobrkey tag: YES
+
+• Format: With global search
+  Filter: {"kinds":[1],"limit":20,"search":"sobrkey"}
+  Results: 0 notes found
+
+Testing relay: wss://nos.lol
+--------------------------------------------------
+
+• Format: Standard "#t" tag array
+  Filter: {"kinds":[1],"limit":20,"#t":["sobrkey"]}
+  Results: 13 notes found
+  First result:
+  ID: 1c877c7faa...
+Tags: #sobrkey
+Author: 57959cf4...
+Content: Good Night
+Created: 4/5/2025, 10:10:22 PM
+  ✓ Has sobrkey tag: YES
+
+• Format: Direct "t" tag array
+  Filter: {"kinds":[1],"limit":20,"t":["sobrkey"]}
+  Results: 0 notes found
+
+• Format: Hashtag format
+  Filter: {"kinds":[1],"limit":20,"#t":["#sobrkey"]}
+  Results: 1 notes found
+  First result:
+  ID: a82c085a7f...
+Tags: #sobrkey, ##sobrkey, ##milestone, ##sobrkey, ##mindfulness, ##sobrkey, ##meditation
+Author: 57959cf4...
+Content: please read
+Created: 4/5/2025, 3:51:49 PM
+  ✓ Has sobrkey tag: YES
+
+• Format: Combined tag formats
+  Filter: {"kinds":[1],"limit":20,"#t":["sobrkey"],"t":["sobrkey"]}
+  Results: 0 notes found
+
+• Format: Event tags format
+  Filter: {"kinds":[1],"limit":20,"e":["sobrkey"]}
+  Results: 0 notes found
+
+• Format: Last 30 days
+  Filter: {"kinds":[1],"limit":20,"#t":["sobrkey"],"since":1741359746}
+  Results: 13 notes found
+  First result:
+  ID: 1c877c7faa...
+Tags: #sobrkey
+Author: 57959cf4...
+Content: Good Night
+Created: 4/5/2025, 10:10:22 PM
+  ✓ Has sobrkey tag: YES
+
+• Format: With global search
+  Filter: {"kinds":[1],"limit":20,"search":"sobrkey"}
+  Results: 0 notes found
+
+Testing relay: wss://relay.nostr.social
+--------------------------------------------------
+
+• Format: Standard "#t" tag array
+  Filter: {"kinds":[1],"limit":20,"#t":["sobrkey"]}
+  ❌ Error: Hostname/IP does not match certificate's altnames: Host: relay.nostr.social. is not in the cert's altnames: DNS:czech.news, DNS:nostr.social
+
+• Format: Direct "t" tag array
+  Filter: {"kinds":[1],"limit":20,"t":["sobrkey"]}
+  ❌ Error: Hostname/IP does not match certificate's altnames: Host: relay.nostr.social. is not in the cert's altnames: DNS:czech.news, DNS:nostr.social
+
+• Format: Hashtag format
+  Filter: {"kinds":[1],"limit":20,"#t":["#sobrkey"]}
+  ❌ Error: Hostname/IP does not match certificate's altnames: Host: relay.nostr.social. is not in the cert's altnames: DNS:czech.news, DNS:nostr.social
+
+• Format: Combined tag formats
+  Filter: {"kinds":[1],"limit":20,"#t":["sobrkey"],"t":["sobrkey"]}
+  ❌ Error: Hostname/IP does not match certificate's altnames: Host: relay.nostr.social. is not in the cert's altnames: DNS:czech.news, DNS:nostr.social
+
+• Format: Event tags format
+  Filter: {"kinds":[1],"limit":20,"e":["sobrkey"]}
+  ❌ Error: Hostname/IP does not match certificate's altnames: Host: relay.nostr.social. is not in the cert's altnames: DNS:czech.news, DNS:nostr.social
+
+• Format: Last 30 days
+  Filter: {"kinds":[1],"limit":20,"#t":["sobrkey"],"since":1741359746}
+  ❌ Error: Hostname/IP does not match certificate's altnames: Host: relay.nostr.social. is not in the cert's altnames: DNS:czech.news, DNS:nostr.social
+
+• Format: With global search
+  Filter: {"kinds":[1],"limit":20,"search":"sobrkey"}
+  ❌ Error: Hostname/IP does not match certificate's altnames: Host: relay.nostr.social. is not in the cert's altnames: DNS:czech.news, DNS:nostr.social
+
+Testing relay: wss://relay.nostr.band
+--------------------------------------------------
+
+• Format: Standard "#t" tag array
+  Filter: {"kinds":[1],"limit":20,"#t":["sobrkey"]}
+  Results: 0 notes found
+
+• Format: Direct "t" tag array
+  Filter: {"kinds":[1],"limit":20,"t":["sobrkey"]}
+  Results: 20 notes found
+  First result:
+  ID: 6c7ec778c1...
+Tags: #Fama
+Author: a210225a...
+Content: Anitta participa em espetáculo de Gilberto Gil. Eis as imagens
+
+Foi publicado um vídeo na página de ...
+Created: 4/6/2025, 11:13:56 AM
+  ✓ Has sobrkey tag: NO
+
+• Format: Hashtag format
+  Filter: {"kinds":[1],"limit":20,"#t":["#sobrkey"]}
+  Results: 0 notes found
+
+• Format: Combined tag formats
+  Filter: {"kinds":[1],"limit":20,"#t":["sobrkey"],"t":["sobrkey"]}
+  Results: 0 notes found
+
+• Format: Event tags format
+  Filter: {"kinds":[1],"limit":20,"e":["sobrkey"]}
+  Results: 20 notes found
+  First result:
+  ID: 6c7ec778c1...
+Tags: #Fama
+Author: a210225a...
+Content: Anitta participa em espetáculo de Gilberto Gil. Eis as imagens
+
+Foi publicado um vídeo na página de ...
+Created: 4/6/2025, 11:13:56 AM
+  ✓ Has sobrkey tag: NO
+
+• Format: Last 30 days
+  Filter: {"kinds":[1],"limit":20,"#t":["sobrkey"],"since":1741359746}
+  Results: 0 notes found
+
+• Format: With global search
+  Filter: {"kinds":[1],"limit":20,"search":"sobrkey"}
+  Results: 0 notes found
+
+Testing relay: wss://relay.snort.social
+--------------------------------------------------
+
+• Format: Standard "#t" tag array
+  Filter: {"kinds":[1],"limit":20,"#t":["sobrkey"]}
+  Results: 0 notes found
+
+• Format: Direct "t" tag array
+  Filter: {"kinds":[1],"limit":20,"t":["sobrkey"]}
+  Results: 0 notes found
+
+• Format: Hashtag format
+  Filter: {"kinds":[1],"limit":20,"#t":["#sobrkey"]}
+  Results: 0 notes found
+
+• Format: Combined tag formats
+  Filter: {"kinds":[1],"limit":20,"#t":["sobrkey"],"t":["sobrkey"]}
+  Results: 0 notes found
+
+• Format: Event tags format
+  Filter: {"kinds":[1],"limit":20,"e":["sobrkey"]}
+  Results: 0 notes found
+
+• Format: Last 30 days
+  Filter: {"kinds":[1],"limit":20,"#t":["sobrkey"],"since":1741359746}
+  Results: 0 notes found
+
+• Format: With global search
+  Filter: {"kinds":[1],"limit":20,"search":"sobrkey"}
+  Results: 0 notes found
+
+Testing relay: wss://nostr.wine
+--------------------------------------------------
+
+• Format: Standard "#t" tag array
+  Filter: {"kinds":[1],"limit":20,"#t":["sobrkey"]}
+  Results: 0 notes found
+
+• Format: Direct "t" tag array
+  Filter: {"kinds":[1],"limit":20,"t":["sobrkey"]}
+  Results: 0 notes found
+
+• Format: Hashtag format
+  Filter: {"kinds":[1],"limit":20,"#t":["#sobrkey"]}
+  Results: 0 notes found
+
+• Format: Combined tag formats
+  Filter: {"kinds":[1],"limit":20,"#t":["sobrkey"],"t":["sobrkey"]}
+  Results: 0 notes found
+
+• Format: Event tags format
+  Filter: {"kinds":[1],"limit":20,"e":["sobrkey"]}
+  Results: 0 notes found
+
+• Format: Last 30 days
+  Filter: {"kinds":[1],"limit":20,"#t":["sobrkey"],"since":1741359746}
+  Results: 0 notes found
+
+• Format: With global search
+  Filter: {"kinds":[1],"limit":20,"search":"sobrkey"}
+  Results: 0 notes found
+
+
+=== FINDING POPULAR TAGS ===
+This will help determine if relays are using different tag formats
+
+
+Checking popular tags on wss://relay.damus.io...
+  Retrieved 50 recent notes
+  Most common tags:
+    #Fama: 1 occurrences
+    #chatgpt: 1 occurrences
+    #nostr: 1 occurrences
+    #profile: 1 occurrences
+    ##bitcoin: 1 occurrences
+    #rumble: 1 occurrences
+    #notyourkeysnotyourcoins: 1 occurrences
+    #boatingaccident: 1 occurrences
+    #bitcoin: 1 occurrences
+    #hodl: 1 occurrences
+  'sobrkey' tag found: 0 times
+
+Checking popular tags on wss://nos.lol...
+  Retrieved 50 recent notes
+  Most common tags:
+    #chatgpt: 1 occurrences
+    #nostr: 1 occurrences
+    #profile: 1 occurrences
+    ##bitcoin: 1 occurrences
+    #rumble: 1 occurrences
+    #kenmomen_news: 1 occurrences
+    #notyourkeysnotyourcoins: 1 occurrences
+    #boatingaccident: 1 occurrences
+    #bitcoin: 1 occurrences
+    #hodl: 1 occurrences
+  'sobrkey' tag found: 0 times
+
+Checking popular tags on wss://relay.nostr.social...
+  ❌ Error: Hostname/IP does not match certificate's altnames: Host: relay.nostr.social. is not in the cert's altnames: DNS:czech.news, DNS:nostr.social
+
+Checking popular tags on wss://relay.nostr.band...
+  Retrieved 50 recent notes
+  Most common tags:
+    #Fama: 1 occurrences
+    #shorts: 1 occurrences
+    #新人vtuber: 1 occurrences
+    #乙葉: 1 occurrences
+    #ioメシヨソイゲーム: 1 occurrences
+    #chelsea: 1 occurrences
+    #chelseafootballclub: 1 occurrences
+    #mainichi_rss_etc_mainichiflash: 1 occurrences
+    #社会: 1 occurrences
+    #速報: 1 occurrences
+  'sobrkey' tag found: 0 times
+
+Checking popular tags on wss://relay.snort.social...
+  Retrieved 20 recent notes
+  Most common tags:
+    #notedeck: 1 occurrences
+  'sobrkey' tag found: 0 times
+
+Checking popular tags on wss://nostr.wine...
+  Retrieved 50 recent notes
+  Most common tags:
+    #rumble: 1 occurrences
+    #notyourkeysnotyourcoins: 1 occurrences
+    #boatingaccident: 1 occurrences
+    #bitcoin: 1 occurrences
+    #hodl: 1 occurrences
+    #grownostr: 1 occurrences
+    #nostrverse: 1 occurrences
+    #coffeechain: 1 occurrences
+    #gm: 1 occurrences
+    #plebchain: 1 occurrences
+  'sobrkey' tag found: 0 times
+
+
+=== SUMMARY AND RECOMMENDATIONS ===
+1. Check the log file for which tag format works best with each relay
+2. Update the app code to use the most compatible tag format
+3. Consider using multiple tag formats in queries (both "t" and "#t")
+4. If "#sobrkey" tags were found but "sobrkey" weren't, update your code to use the proper format
+5. Some relays might need more time to propagate new posts
+
+Detailed log saved to: nostr-tag-debug-log.txt

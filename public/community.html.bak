@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sobrkey - Community</title>
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/journal.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="js/nostr.bundle.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="header-left">
+        <button class="menu-button" id="sidebarToggle">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <h1>Community</h1>
+      </div>
+      <div class="header-right">
+        <div class="streak-counter">
+          <span id="streak-count">0</span> day streak
+        </div>
+      </div>
+    </header>
+    
+    <div class="app-content">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <img src="assets/logo-dark.svg" alt="Sobrkey Logo" height="40">
+        </div>
+        <nav class="sidebar-nav">
+          <ul>
+            <li>
+              <a href="/journal">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                  <path d="M8 10h8M8 14h8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                Journal
+              </a>
+            </li>
+            <li>
+              <a href="/chat">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                  <path d="M9 10h.01M12 10h.01M15 10h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                Chat with Mira
+              </a>
+            </li>
+            <li class="active">
+              <a href="/community">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                Community
+              </a>
+            </li>
+            <li>
+              <a href="/meetings">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M17 20l-5-5 5-5M8 9l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                Meetings
+              </a>
+            </li>
+            <li>
+              <a href="/support">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                  <path d="M12 16v-4M12 8h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                Support
+              </a>
+            </li>
+            <li>
+              <a href="/emergency">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                  <path d="M12 10v4M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                Emergency
+              </a>
+            </li>
+          </ul>
+        </nav>
+        <div class="sidebar-footer">
+          <a href="/settings" class="settings-link">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            Settings
+          </a>
+        </div>
+      </aside>
+      
+      <main class="main-content">
+        <div class="community-container">
+          <section class="community-section">
+            <div class="section-header">
+              <h2>Sobrkey Community</h2>
+              <p class="date-display" id="current-date">April 5, 2025</p>
+            </div>
+            
+            <!-- Post creation area -->
+            <div class="post-creation">
+              <textarea id="post-content" placeholder="Share a thought, experience, or support with the community..."></textarea>
+              <div class="post-actions">
+                <div class="post-tags">
+                  <span class="tag">sobrkey</span>
+                  <span class="tag-add" id="add-tag">+ Add Tag</span>
+                </div>
+                <button id="publish-post" class="btn btn-primary">Share</button>
+              </div>
+            </div>
+            
+            <!-- Posts feed -->
+            <div class="posts-feed" id="posts-feed">
+              <div class="loading-indicator">
+                <div class="spinner"></div>
+                <p>Loading community posts...</p>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+  
+  <script>
+    // Check if user has completed onboarding
+    document.addEventListener('DOMContentLoaded', function() {
+      // Set current date
+      const dateElement = document.getElementById('current-date');
+      const now = new Date();
+      dateElement.textContent = now.toLocaleDateString('en-US', { 
+        month: 'long', 
+        day: 'numeric', 
+        year: 'numeric' 
+      });
+      
+      // Check for onboarding completion
+      if (localStorage.getItem('sobrkey_onboarding_complete') !== 'true') {
+        // User hasn't completed onboarding, redirect to welcome page
+        window.location.href = '/';
+        return;
+      }
+      
+      // Load user data
+      const pubkey = localStorage.getItem('sobrkey_pubkey');
+      if (!pubkey) {
+        // No public key, redirect to welcome page
+        window.location.href = '/';
+        return;
+      }
+      
+      // Toggle sidebar on mobile
+      document.getElementById('sidebarToggle').addEventListener('click', function() {
+        document.querySelector('.sidebar').classList.toggle('active');
+      });
+      
+      // Initialize Nostr functionality
+      initNostr();
+      
+      // Add event listeners
+      document.getElementById('publish-post').addEventListener('click', publishPost);
+      document.getElementById('add-tag').addEventListener('click', addTag);
+    });
+    
+    let relayPool = null;
+    let pubkey = null;
+    let privkey = null;
+    
+    // Initialize Nostr connection
+    async function initNostr() {
+      try {
+        // Get user's keys
+        pubkey = localStorage.getItem('sobrkey_pubkey_raw');
+        privkey = localStorage.getItem('sobrkey_privatekey_raw');
+        
+        if (!pubkey || !privkey) {
+          console.error("Keys not found in localStorage:", {
+            pubkeyRaw: localStorage.getItem('sobrkey_pubkey_raw'),
+            privkeyRaw: localStorage.getItem('sobrkey_privatekey_raw'),
+            pubkey: localStorage.getItem('sobrkey_pubkey'),
+            hasPrivkey: localStorage.getItem('sobrkey_privatekey') ? 'Yes' : 'No',
+            onboardingComplete: localStorage.getItem('sobrkey_onboarding_complete'),
+            keysCreated: localStorage.getItem('sobrkey_keys_created')
+          });
+          showError("Couldn't load your keys. Please try signing in again.");
+          return;
+        }
+        
+        console.log("Connecting to Nostr relays...");
+        
+        // Connect to relays
+        const relays = [
+          'wss://relay.damus.io',
+          'wss://relay.nostr.band',
+          'wss://nostr.wine'
+        ];
+        
+        // Setup pool
+        const { SimplePool } = window.NostrTools;
+        relayPool = new SimplePool();
+        
+        // Connect to relays
+        for (const relay of relays) {
+          relayPool.ensureRelay(relay);
+        }
+        
+        console.log("Connected to relays, fetching community posts...");
+        
+        // Load community posts
+        loadCommunityPosts();
+        
+        // Subscribe to new posts
+        subscribeToNewPosts();
+        
+      } catch (error) {
+        console.error("Error initializing Nostr:", error);
+        showError("Failed to connect to the Nostr network. Please try again later.");
+      }
+    }
+    
+    // Load existing community posts
+    async function loadCommunityPosts() {
+      try {
+        const { nip19 } = window.NostrTools;
+        
+        const feedElement = document.getElementById('posts-feed');
+        feedElement.innerHTML = '<div class="loading-indicator"><div class="spinner"></div><p>Loading community posts...</p></div>';
+        
+        // Create a filter for relevant posts (kind 1 = text note)
+        // With the sobrkey tag
+        const filter = {
+          kinds: [1],
+          limit: 50,
+          "#t": ["sobrkey"],
+          since: Math.floor((Date.now() / 1000) - 7 * 24 * 60 * 60) // Posts from last 7 days
+        };
+        
+        console.log("Fetching posts with filter:", filter);
+        
+        // Fetch posts from relays
+        const posts = await relayPool.list(relayPool.relays, [filter]);
+        
+        console.log(`Retrieved ${posts.length} posts`);
+        
+        // Sort posts by created_at (newest first)
+        posts.sort((a, b) => b.created_at - a.created_at);
+        
+        // Clear loading indicator
+        feedElement.innerHTML = '';
+        
+        if (posts.length === 0) {
+          feedElement.innerHTML = '<div class="empty-state"><p>No community posts yet. Be the first to share!</p></div>';
+          return;
+        }
+        
+        // Display posts
+        for (const post of posts) {
+          addPostToFeed(post);
+        }
+        
+      } catch (error) {
+        console.error("Error loading community posts:", error);
+        showError("Failed to load community posts. Please try refreshing the page.");
+      }
+    }
+    
+    // Subscribe to new posts
+    function subscribeToNewPosts() {
+      try {
+        const { nip19 } = window.NostrTools;
+        
+        // Create a filter for new posts with the sobrkey tag
+        const filter = {
+          kinds: [1],
+          "#t": ["sobrkey"],
+          since: Math.floor(Date.now() / 1000) // Only posts from now on
+        };
+        
+        // Subscribe to new posts
+        const sub = relayPool.sub(relayPool.relays, [filter]);
+        
+        sub.on('event', (event) => {
+          // Add new post to the feed
+          addPostToFeed(event, true);
+        });
+        
+      } catch (error) {
+        console.error("Error subscribing to new posts:", error);
+      }
+    }
+    
+    // Add a post to the feed
+    function addPostToFeed(post, isNew = false) {
+      try {
+        const { nip19 } = window.NostrTools;
+        const feedElement = document.getElementById('posts-feed');
+        
+        // Format date
+        const postDate = new Date(post.created_at * 1000);
+        const formattedDate = postDate.toLocaleString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        
+        // Get author npub
+        const authorNpub = nip19.npubEncode(post.pubkey);
+        const shortNpub = authorNpub.slice(0, 8) + '...' + authorNpub.slice(-4);
+        
+        // Create post element
+        const postElement = document.createElement('div');
+        postElement.className = 'post';
+        if (isNew) postElement.classList.add('new-post');
+        
+        // Get tags from the post
+        const tags = post.tags
+          .filter(tag => tag[0] === 't')
+          .map(tag => `<span class="post-tag">#${tag[1]}</span>`)
+          .join(' ');
+        
+        postElement.innerHTML = `
+          <div class="post-header">
+            <span class="post-author">${shortNpub}</span>
+            <span class="post-date">${formattedDate}</span>
+          </div>
+          <div class="post-content">${escapeHtml(post.content)}</div>
+          <div class="post-footer">
+            <div class="post-tags">
+              ${tags}
+            </div>
+          </div>
+        `;
+        
+        // Add post to feed (new posts at top)
+        if (isNew) {
+          feedElement.insertBefore(postElement, feedElement.firstChild);
+        } else {
+          feedElement.appendChild(postElement);
+        }
+        
+        // If this is a new post, highlight it briefly
+        if (isNew) {
+          setTimeout(() => {
+            postElement.classList.remove('new-post');
+          }, 3000);
+        }
+        
+      } catch (error) {
+        console.error("Error adding post to feed:", error);
+      }
+    }
+    
+    // Publish a new post to the Nostr network
+    async function publishPost() {
+      try {
+        const content = document.getElementById('post-content').value.trim();
+        
+        if (!content) {
+          alert('Please enter some content for your post.');
+          return;
+        }
+        
+        // Show publishing indicator
+        const publishButton = document.getElementById('publish-post');
+        const originalText = publishButton.textContent;
+        publishButton.disabled = true;
+        publishButton.textContent = 'Publishing...';
+        
+        const { Event, getEventHash, signEvent, nip19 } = window.NostrTools;
+        
+        // Get all user-added tags
+        const tagElements = document.querySelectorAll('.tag:not(.tag-add)');
+        const tags = Array.from(tagElements).map(el => ['t', el.textContent]);
+        
+        // Always include the sobrkey tag
+        if (!tags.some(tag => tag[1] === 'sobrkey')) {
+          tags.push(['t', 'sobrkey']);
+        }
+        
+        // Create event
+        let event = {
+          kind: 1,
+          pubkey: pubkey,
+          created_at: Math.floor(Date.now() / 1000),
+          tags: tags,
+          content: content
+        };
+        
+        // Calculate event hash
+        event.id = getEventHash(event);
+        
+        // Sign the event
+        event = signEvent(event, privkey);
+        
+        console.log("Publishing post:", event);
+        
+        // Publish to relays
+        const pubs = relayPool.publish(relayPool.relays, event);
+        
+        // Wait for at least one publish confirmation
+        const pub = await Promise.any(pubs);
+        
+        console.log("Post published:", pub);
+        
+        // Clear the input
+        document.getElementById('post-content').value = '';
+        
+        // Reset the publish button
+        publishButton.disabled = false;
+        publishButton.textContent = originalText;
+        
+        // Show success message
+        alert('Your post has been published!');
+        
+      } catch (error) {
+        console.error("Error publishing post:", error);
+        alert('Failed to publish your post. Please try again.');
+        
+        // Reset the publish button
+        const publishButton = document.getElementById('publish-post');
+        publishButton.disabled = false;
+        publishButton.textContent = 'Share';
+      }
+    }
+    
+    // Add a new tag to the post
+    function addTag() {
+      const tagName = prompt("Enter a tag (without the # symbol):");
+      
+      if (!tagName) return;
+      
+      // Sanitize tag: remove spaces and special characters
+      const sanitizedTag = tagName.trim().replace(/[^\w]/g, '').toLowerCase();
+      
+      if (!sanitizedTag) {
+        alert("Please enter a valid tag.");
+        return;
+      }
+      
+      // Check if tag already exists
+      const existingTags = document.querySelectorAll('.tag:not(.tag-add)');
+      for (const tag of existingTags) {
+        if (tag.textContent === sanitizedTag) {
+          alert("This tag already exists.");
+          return;
+        }
+      }
+      
+      // Create and add new tag
+      const tagElement = document.createElement('span');
+      tagElement.className = 'tag';
+      tagElement.textContent = sanitizedTag;
+      
+      // Add ability to remove tag on click
+      tagElement.addEventListener('click', function() {
+        if (confirm("Remove this tag?")) {
+          this.remove();
+        }
+      });
+      
+      // Add tag before the "Add Tag" button
+      const tagsContainer = document.querySelector('.post-tags');
+      tagsContainer.insertBefore(tagElement, document.getElementById('add-tag'));
+    }
+    
+    // Helper function to show errors
+    function showError(message) {
+      const feedElement = document.getElementById('posts-feed');
+      feedElement.innerHTML = `<div class="error-message">${message}</div>`;
+    }
+    
+    // Helper function to escape HTML to prevent XSS
+    function escapeHtml(unsafe) {
+      return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+  
+  <style>
+    .community-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+    
+    .post-creation {
+      background-color: var(--bg-card);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .post-creation textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      font-family: 'Inter', sans-serif;
+      resize: vertical;
+    }
+    
+    .post-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .post-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    
+    .tag, .tag-add {
+      display: inline-block;
+      background-color: var(--bg-secondary);
+      color: var(--text-primary);
+      padding: 0.25rem 0.75rem;
+      border-radius: 16px;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    
+    .tag::before {
+      content: '#';
+    }
+    
+    .tag-add {
+      background-color: transparent;
+      border: 1px dashed var(--border-color);
+    }
+    
+    .posts-feed {
+      margin-top: 2rem;
+    }
+    
+    .post {
+      background-color: var(--bg-card);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      transition: background-color 0.3s ease;
+    }
+    
+    .new-post {
+      background-color: var(--bg-highlight);
+    }
+    
+    .post-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+      font-size: 0.875rem;
+    }
+    
+    .post-author {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    
+    .post-date {
+      color: var(--text-secondary);
+    }
+    
+    .post-content {
+      margin-bottom: 1rem;
+      white-space: pre-wrap;
+    }
+    
+    .post-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.875rem;
+    }
+    
+    .post-tag {
+      color: var(--text-accent);
+      margin-right: 0.5rem;
+    }
+    
+    .loading-indicator {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+      color: var(--text-secondary);
+    }
+    
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      border-top-color: var(--primary-color);
+      animation: spin 1s ease-in-out infinite;
+      margin-bottom: 1rem;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .empty-state, .error-message {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-secondary);
+      background-color: var(--bg-card);
+      border-radius: 8px;
+    }
+    
+    .error-message {
+      color: var(--error-color);
+    }
+  </style>
+</body>
+</html>

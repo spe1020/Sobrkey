@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nostr Tools Test</title>
+  <style>
+  <script src="js/constants.js"></script>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 5px;
+      overflow: auto;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #4A56FF;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    .key-display {
+      background-color: #eee;
+      padding: 10px;
+      border-radius: 5px;
+      margin-top: 10px;
+      word-break: break-all;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <h1>Nostr Tools Test Page</h1>
+  
+  <div>
+    <h2>Library Status</h2>
+    <pre id="library-status">Loading...</pre>
+  </div>
+  
+  <div>
+    <h2>Key Generation</h2>
+    <button id="generate-keys">Generate Keys</button>
+    <div id="generation-result"></div>
+  </div>
+  
+  <div>
+    <h2>Library Methods</h2>
+    <pre id="library-methods">Loading...</pre>
+  </div>
+  
+  <script src="/nostr-bundle.js"></script>
+  <script>
+    // Function to check if a value is a function
+    function isFunction(value) {
+      return typeof value === 'function';
+    }
+    
+    // Function to safely stringify objects for display
+    function safeStringify(obj, depth = 0, maxDepth = 2) {
+      if (depth > maxDepth) return '[Object]';
+      
+      try {
+        if (obj === null) return 'null';
+        if (obj === undefined) return 'undefined';
+        if (typeof obj === 'function') return '[Function]';
+        if (typeof obj !== 'object') return obj.toString();
+        
+        if (Array.isArray(obj)) {
+          const items = obj.map(item => safeStringify(item, depth + 1, maxDepth));
+          return `[${items.join(', ')}]`;
+        }
+        
+        const entries = Object.entries(obj).map(([key, value]) => 
+          `${key}: ${safeStringify(value, depth + 1, maxDepth)}`
+        );
+        return `{\n  ${entries.join(',\n  ')}\n}`;
+      } catch (e) {
+        return `[Error: ${e.message}]`;
+      }
+    }
+    
+    // Document load handler
+    document.addEventListener('DOMContentLoaded', function() {
+      const statusElem = document.getElementById('library-status');
+      const methodsElem = document.getElementById('library-methods');
+      const generateBtn = document.getElementById('generate-keys');
+      const resultElem = document.getElementById('generation-result');
+      
+      // Check library status
+      if (typeof window.nostr !== 'undefined') {
+        statusElem.textContent = 'nostr library loaded as window.nostr';
+      } else if (typeof window.NostrTools !== 'undefined') {
+        statusElem.textContent = 'nostr library loaded as window.NostrTools';
+      } else {
+        // Try to find the library by inspecting global objects
+        let foundObject = null;
+        Object.keys(window).forEach(key => {
+          const obj = window[key];
+          if (obj && typeof obj === 'object' && 
+              (isFunction(obj.generatePrivateKey) || isFunction(obj.getPublicKey))) {
+            foundObject = key;
+          }
+        });
+        
+        if (foundObject) {
+          statusElem.textContent = `Found nostr-like library in window.${foundObject}`;
+        } else {
+          statusElem.textContent = 'nostr library NOT loaded! Check the console for errors.';
+        }
+      }
+      
+      // Inspect the library methods
+      let libraryObject = window.nostr || window.NostrTools;
+      
+      // If neither exists, try to find it by checking global objects
+      if (!libraryObject) {
+        Object.keys(window).forEach(key => {
+          const obj = window[key];
+          if (obj && typeof obj === 'object' && 
+              (isFunction(obj.generatePrivateKey) || isFunction(obj.getPublicKey))) {
+            libraryObject = obj;
+          }
+        });
+      }
+      
+      if (libraryObject) {
+        // Log to console for debugging
+        console.log('Nostr Library Object:', libraryObject);
+        
+        // Get methods
+        const methods = Object.keys(libraryObject).filter(key => 
+          typeof libraryObject[key] === 'function'
+        );
+        
+        methodsElem.textContent = `Available methods (${methods.length}):\n${methods.join('\n')}`;
+      } else {
+        methodsElem.textContent = 'No nostr library methods found';
+      }
+      
+      // Set up key generation button
+      generateBtn.addEventListener('click', function() {
+        try {
+          resultElem.innerHTML = '<p>Generating keys...</p>';
+          
+          // Find the library object with generation methods
+          let nostr = window.nostr || window.NostrTools;
+          
+          // Try to find alternative exports if standard ones aren't available
+          if (!nostr || !isFunction(nostr.generatePrivateKey)) {
+            Object.keys(window).forEach(key => {
+              const obj = window[key];
+              if (obj && typeof obj === 'object' && isFunction(obj.generatePrivateKey)) {
+                nostr = obj;
+              }
+            });
+          }
+          
+          if (!nostr) {
+            throw new Error('Could not find Nostr library with key generation functions');
+          }
+          
+          if (!isFunction(nostr.generatePrivateKey) || !isFunction(nostr.getPublicKey)) {
+            throw new Error('Required nostr methods are missing');
+          }
+          
+          // Generate keys using found methods
+          const privateKey = nostr.generatePrivateKey();
+          const publicKey = nostr.getPublicKey(privateKey);
+          
+          // Try to encode with NIP-19 if available
+          let privateKeyEncoded = privateKey;
+          let publicKeyEncoded = publicKey;
+          
+          if (nostr.nip19 && typeof nostr.nip19.nsecEncode === 'function' && typeof nostr.nip19.npubEncode === 'function') {
+            privateKeyEncoded = nostr.nip19.nsecEncode(privateKey);
+            publicKeyEncoded = nostr.nip19.npubEncode(publicKey);
+            console.log('Keys encoded with NIP-19');
+          } else {
+            console.warn('NIP-19 encoding not available, using raw hex keys');
+          }
+          
+          // Display results
+          resultElem.innerHTML = `
+            <p>Keys generated successfully:</p>
+            <div class="key-display">
+              <strong>Private Key (NIP-19 encoded):</strong><br>
+              ${privateKeyEncoded}
+            </div>
+            <div class="key-display">
+              <strong>Private Key (raw hex):</strong><br>
+              ${privateKey}
+            </div>
+            <div class="key-display">
+              <strong>Public Key (NIP-19 encoded):</strong><br>
+              ${publicKeyEncoded}
+            </div>
+            <div class="key-display">
+              <strong>Public Key (raw hex):</strong><br>
+              ${publicKey}
+            </div>
+          `;
+        } catch (err) {
+          resultElem.innerHTML = `
+            <p style="color:red">Error generating keys: ${err.message}</p>
+            <pre>${err.stack}</pre>
+          `;
+        }
+      });
+    });
+  </script>
+</body>
+</html>

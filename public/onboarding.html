@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sobrkey - Get Started</title>
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="css/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="js/nostr.bundle.js"></script>
+</head>
+<body>
+  <div class="onboarding">
+    <!-- Step 1: Welcome -->
+    <div class="onboarding-step" id="step-1">
+      <div class="progress-steps">
+        <span class="progress-step active"></span>
+        <span class="progress-step"></span>
+        <span class="progress-step"></span>
+        <span class="progress-step"></span>
+      </div>
+      <div class="step-content">
+        <img src="assets/sobrkey-logo.png" alt="Sobrkey Logo" height="60" style="margin-bottom: 20px;">
+        <h2 class="step-title">Welcome to Sobrkey</h2>
+        <p class="step-description">
+          A private, secure support community for those dealing with alcohol-related challenges.
+        </p>
+      </div>
+      <button class="btn btn-primary" onclick="nextStep(2)">Get Started</button>
+    </div>
+    
+    <!-- Step 2: Privacy Explanation -->
+    <div class="onboarding-step" id="step-2">
+      <div class="progress-steps">
+        <span class="progress-step"></span>
+        <span class="progress-step active"></span>
+        <span class="progress-step"></span>
+        <span class="progress-step"></span>
+      </div>
+      <div class="step-content">
+        <h2 class="step-title">Your Privacy Matters</h2>
+        <p class="step-description">
+          Sobrkey is built on the Nostr protocol, a decentralized network that keeps your data private.
+        </p>
+        <div style="margin-bottom: 30px; text-align: left;">
+          <div style="margin-bottom: 15px; display: flex; align-items: flex-start;">
+            <span style="color: var(--secondary-color); margin-right: 10px;">✓</span>
+            <div>
+              <strong>End-to-End Encryption</strong>
+              <p style="margin-top: 5px; color: var(--text-secondary);">Your journal entries and messages are encrypted so only you can read them.</p>
+            </div>
+          </div>
+          <div style="margin-bottom: 15px; display: flex; align-items: flex-start;">
+            <span style="color: var(--secondary-color); margin-right: 10px;">✓</span>
+            <div>
+              <strong>No Personal Information Required</strong>
+              <p style="margin-top: 5px; color: var(--text-secondary);">No email, phone number, or personal details needed to use Sobrkey.</p>
+            </div>
+          </div>
+          <div style="display: flex; align-items: flex-start;">
+            <span style="color: var(--secondary-color); margin-right: 10px;">✓</span>
+            <div>
+              <strong>You Control Your Data</strong>
+              <p style="margin-top: 5px; color: var(--text-secondary);">Your private key is the only way to access your data. We never see it.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="button-group">
+        <button class="btn btn-secondary" onclick="prevStep(1)">Back</button>
+        <button class="btn btn-primary" onclick="nextStep(3)">Continue</button>
+      </div>
+    </div>
+    
+    <!-- Step 3: Key Generation -->
+    <div class="onboarding-step" id="step-3">
+      <div class="progress-steps">
+        <span class="progress-step"></span>
+        <span class="progress-step"></span>
+        <span class="progress-step active"></span>
+        <span class="progress-step"></span>
+      </div>
+      <div class="step-content">
+        <h2 class="step-title">Create Your Private Key</h2>
+        <p class="step-description">
+          Your private key is like a password that unlocks your encrypted data. Only you have access to it.
+        </p>
+      </div>
+      
+      <div id="key-generation-area">
+        <p class="tab-description">
+          Generate a new private key that will be used to encrypt your journal entries and messages.
+        </p>
+        <button id="generate-keys-btn" class="btn btn-primary" onclick="generateKeys()">
+          Generate My Keys
+        </button>
+      </div>
+      
+      <p style="color: var(--text-secondary); margin-top: 20px; text-align: center;">
+        Already have a Nostr private key? <a href="/login" style="color: var(--primary-color);">Sign in here</a>
+      </p>
+      
+      <!-- Key Display (hidden until keys are generated) -->
+      <div id="keys-display" style="display: none; margin-top: 30px;">
+        <div class="message message-success">
+          Your keys have been generated successfully!
+        </div>
+        
+        <div style="margin-top: 20px;">
+          <h3 style="margin-bottom: 10px; color: var(--text-secondary);">Your Public Key:</h3>
+          <div class="key-display">
+            <span id="public-key-text"></span>
+            <button class="copy-btn" onclick="copyToClipboard('public-key-text')">Copy</button>
+          </div>
+          
+          <h3 style="margin: 20px 0 10px; color: var(--text-secondary);">Your Private Key:</h3>
+          <div class="key-display">
+            <span id="private-key-text"></span>
+            <button class="copy-btn" onclick="copyToClipboard('private-key-text')">Copy</button>
+          </div>
+          
+          <div class="message message-error" style="margin-top: 20px;">
+            <strong>IMPORTANT:</strong> Save your private key somewhere safe! If you lose it, you cannot recover your account.
+          </div>
+        </div>
+        
+        <button id="continue-after-generation" class="btn btn-primary" style="margin-top: 20px; display: none;" onclick="nextStep(4)">
+          Continue
+        </button>
+      </div>
+      
+      <div class="button-group" style="margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="prevStep(2)">Back</button>
+      </div>
+    </div>
+    
+    <!-- Step 4: Completion -->
+    <div class="onboarding-step" id="step-4">
+      <div class="progress-steps">
+        <span class="progress-step"></span>
+        <span class="progress-step"></span>
+        <span class="progress-step"></span>
+        <span class="progress-step active"></span>
+      </div>
+      <div class="step-content">
+        <h2 class="step-title">You're All Set!</h2>
+        <p class="step-description">
+          Your Sobrkey account has been created and your private key has been securely stored on this device.
+        </p>
+        <div style="margin: 30px 0; text-align: center;">
+          <img src="assets/setup-complete.svg" alt="Setup Complete" style="width: 150px; height: 150px;">
+        </div>
+        <p style="margin-bottom: 30px; color: var(--text-secondary);">
+          You're now ready to start your journey with Sobrkey. Your privacy is protected, and you're in control of your data.
+        </p>
+      </div>
+      <button class="btn btn-primary" onclick="enterApp()">Enter Sobrkey</button>
+    </div>
+  </div>
+  
+  <!-- The onboarding.js script handles everything -->
+  <script src="js/onboarding.js"></script>

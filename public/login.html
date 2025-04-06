@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sobrkey - Sign In</title>
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="css/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="js/nostr.bundle.js"></script>
+</head>
+<body>
+  <div class="onboarding">
+    <div class="onboarding-step active">
+      <div class="step-content">
+        <img src="assets/sobrkey-logo.png" alt="Sobrkey Logo" height="60" style="margin-bottom: 20px;">
+        <h2 class="step-title">Sign In to Sobrkey</h2>
+        <p class="step-description">
+          Enter your Nostr private key to access your account
+        </p>
+      </div>
+      
+      <div id="import-tab-content" class="tab-content active">
+        <p class="tab-description">
+          Enter your Nostr private key to access your encrypted data.
+        </p>
+        <div class="form-group">
+          <label>Your Private Key (nsec or hex):</label>
+          <input type="text" id="import-private-key" class="form-control" placeholder="nsec1..." autocomplete="off">
+          <p style="color: var(--text-secondary); font-size: 12px; margin-top: 5px;">
+            ℹ️ Enter your key starting with 'nsec' or enter your hex private key
+          </p>
+        </div>
+        <button id="import-keys-btn" class="btn btn-primary" onclick="importExistingKey()">
+          Sign In
+        </button>
+      </div>
+      
+      <div style="margin-top: 30px; text-align: center;">
+        <p style="color: var(--text-secondary); margin-bottom: 10px;">
+          Don't have an account yet?
+        </p>
+        <a href="/onboarding" class="btn btn-secondary">Create New Account</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Store user keys
+    const userKeys = {
+      privateKey: null,
+      publicKey: null,
+      privateKeyRaw: null,
+      publicKeyRaw: null
+    };
+    
+    /**
+     * Import an existing Nostr private key
+     */
+    async function importExistingKey() {
+      try {
+        const privateKeyInput = document.getElementById('import-private-key');
+        const privateKeyValue = privateKeyInput.value.trim();
+        
+        if (!privateKeyValue) {
+          alert('Please enter your private key');
+          return;
+        }
+        
+        // Show loading state
+        const importBtn = document.getElementById('import-keys-btn');
+        const originalBtnText = importBtn.textContent;
+        importBtn.disabled = true;
+        importBtn.textContent = 'Processing...';
+        
+        // Get the NostrTools library
+        let nostr;
+        if (typeof window.NostrTools !== 'undefined') {
+          nostr = window.NostrTools;
+        } else {
+          throw new Error('Nostr library not available');
+        }
+        
+        // Process the private key (handle both nsec and hex formats)
+        let privateKey;
+        
+        if (privateKeyValue.startsWith('nsec')) {
+          // NIP-19 encoded key
+          try {
+            const decoded = nostr.nip19.decode(privateKeyValue);
+            privateKey = decoded.data;
+          } catch (error) {
+            throw new Error('Invalid nsec key format');
+          }
+        } else {
+          // Assume it's a hex key
+          privateKey = privateKeyValue;
+        }
+        
+        // Validate the key by attempting to derive a public key
+        let publicKey;
+        try {
+          publicKey = nostr.getPublicKey(privateKey);
+        } catch (error) {
+          throw new Error('Invalid private key');
+        }
+        
+        // Encode keys in NIP-19 format
+        const privateKeyEncoded = nostr.nip19.nsecEncode(privateKey);
+        const publicKeyEncoded = nostr.nip19.npubEncode(publicKey);
+        
+        // Store the keys
+        userKeys.privateKey = privateKeyEncoded;
+        userKeys.publicKey = publicKeyEncoded;
+        userKeys.privateKeyRaw = privateKey;
+        userKeys.publicKeyRaw = publicKey;
+        
+        // Save to local storage
+        localStorage.setItem('sobrkey_privatekey', privateKeyEncoded);
+        localStorage.setItem('sobrkey_privatekey_raw', privateKey);
+        localStorage.setItem('sobrkey_pubkey', publicKeyEncoded);
+        localStorage.setItem('sobrkey_pubkey_raw', publicKey);
+        localStorage.setItem('sobrkey_keys_created', 'true');
+        localStorage.setItem('sobrkey_onboarding_complete', 'true');
+        
+        // Redirect to the journal page
+        window.location.href = '/journal';
+      } catch (error) {
+        console.error('Error importing key:', error);
+        alert(`Error importing key: ${error.message}`);
+      } finally {
+        // Reset button state
+        const importBtn = document.getElementById('import-keys-btn');
+        importBtn.disabled = false;
+        importBtn.textContent = 'Sign In';
+      }
+    }
+    
+    // Check if user has already signed in
+    document.addEventListener('DOMContentLoaded', function() {
+      if (localStorage.getItem('sobrkey_keys_created') === 'true' &&
+          localStorage.getItem('sobrkey_privatekey') &&
+          localStorage.getItem('sobrkey_pubkey')) {
+        // User has already created keys, ask if they want to continue
+        if (confirm('It looks like you\'re already signed in. Would you like to continue to your account?')) {
+          window.location.href = '/journal';
+        }
+      }
+    });
+  </script>
+</body>
+</html>

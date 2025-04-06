@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sobrkey - My Journal</title>
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+  <script src="js/constants.js"></script>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/journal.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="js/nostr.bundle.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="header-left">
+        <button class="menu-button" id="sidebarToggle">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <h1>My Journal</h1>
+      </div>
+      <div class="header-right">
+        <div class="streak-counter">
+          <span id="streak-count">0</span> day streak
+        </div>
+      </div>
+    </header>
+    
+    <div class="app-content">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <img src="assets/sobrkey-logo.png" alt="Sobrkey Logo" height="40">
+        </div>
+        <nav class="sidebar-nav">
+          <ul>
+            <li class="active">
+              <a href="/journal">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                  <path d="M8 10h8M8 14h8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                Journal
+              </a>
+            </li>
+            <li>
+              <a href="/chat">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                  <path d="M9 10h.01M12 10h.01M15 10h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                Chat with Mira
+              </a>
+            </li>
+            <li>
+              <a href="/community">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                Community
+              </a>
+            </li>
+            <li>
+              <a href="/meetings">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M17 20l-5-5 5-5M8 9l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                Meetings
+              </a>
+            </li>
+            <li>
+              <a href="/support">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                  <path d="M12 16v-4M12 8h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                Support
+              </a>
+            </li>
+            <li>
+              <a href="/emergency">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                  <path d="M12 10v4M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                Emergency
+              </a>
+            </li>
+          </ul>
+        </nav>
+        <div class="sidebar-footer">
+          <a href="/settings" class="settings-link">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            Settings
+          </a>
+        </div>
+      </aside>
+      
+      <main class="main-content">
+        <div class="journal-container">
+          <section class="journal-entry-section">
+            <div class="section-header">
+              <h2>Today's Journal Entry</h2>
+              <p class="date-display" id="current-date">April 5, 2025</p>
+            </div>
+            
+            <div class="journal-entry">
+              <textarea id="journal-text" placeholder="Write your thoughts here... What's on your mind today?"></textarea>
+              <div class="journal-actions">
+                <button id="save-journal" class="btn btn-primary">Save Entry</button>
+                <a href="/chat" class="btn btn-secondary">Chat with Mira</a>
+              </div>
+            </div>
+          </section>
+          
+          <!-- Journal history section -->
+          <section class="journal-history-section">
+            <div class="section-header">
+              <h2>Journal History</h2>
+              <button id="refresh-history" class="btn btn-sm btn-secondary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M23 4v6h-6M1 20v-6h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                Refresh
+              </button>
+            </div>
+            
+            <div class="journal-entries" id="journal-entries-list">
+              <div class="loading-message">Loading your journal entries...</div>
+            </div>
+            
+            <div class="empty-state" id="empty-journal-state" style="display: none;">
+              <p>You haven't written any journal entries yet.</p>
+              <p>Start by writing your thoughts in the box above.</p>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+  
+  <script>
+    // Check if user has completed onboarding
+    document.addEventListener('DOMContentLoaded', function() {
+      // Set current date
+      const dateElement = document.getElementById('current-date');
+      const now = new Date();
+      dateElement.textContent = now.toLocaleDateString('en-US', { 
+        month: 'long', 
+        day: 'numeric', 
+        year: 'numeric' 
+      });
+      
+      // Check for onboarding completion
+      if (localStorage.getItem('sobrkey_onboarding_complete') !== 'true') {
+        // User hasn't completed onboarding, redirect to welcome page
+        window.location.href = '/';
+        return;
+      }
+      
+      // Load user data
+      const pubkey = localStorage.getItem('sobrkey_pubkey');
+      if (!pubkey) {
+        // No public key, redirect to welcome page
+        window.location.href = '/';
+        return;
+      }
+      
+      // Toggle sidebar on mobile
+      document.getElementById('sidebarToggle').addEventListener('click', function() {
+        document.querySelector('.sidebar').classList.toggle('active');
+      });
+      
+      // Save journal entry
+      document.getElementById('save-journal').addEventListener('click', saveJournalEntry);
+      
+      // Refresh journal history
+      document.getElementById('refresh-history').addEventListener('click', loadJournalEntries);
+      
+      // Load journal entries
+      loadJournalEntries();
+    });
+    
+    // Save journal entry
+    async function saveJournalEntry() {
+      const journalText = document.getElementById('journal-text').value.trim();
+      
+      if (!journalText) {
+        alert('Please enter some text before saving.');
+        return;
+      }
+      
+      try {
+        // Save button loading state
+        const saveButton = document.getElementById('save-journal');
+        const originalText = saveButton.textContent;
+        saveButton.disabled = true;
+        saveButton.textContent = 'Saving...';
+        
+        // In a real implementation, we would encrypt and store this via Nostr
+        // For now, just store in localStorage as a demonstration
+        const entry = {
+          id: Date.now().toString(),
+          date: new Date().toISOString(),
+          content: journalText
+        };
+        
+        // Get existing entries
+        let entries = JSON.parse(localStorage.getItem('sobrkey_journal_entries') || '[]');
+        
+        // Add the new entry
+        entries.push(entry);
+        
+        // Save back to localStorage
+        localStorage.setItem('sobrkey_journal_entries', JSON.stringify(entries));
+        
+        // Reset the text area
+        document.getElementById('journal-text').value = '';
+        
+        // Reset button state
+        saveButton.disabled = false;
+        saveButton.textContent = originalText;
+        
+        // Show a success message
+        alert('Journal entry saved successfully!');
+        
+        // Reload the entries
+        loadJournalEntries();
+        
+      } catch (error) {
+        console.error('Error saving journal entry:', error);
+        alert('Failed to save journal entry. Please try again.');
+        
+        // Reset button state
+        const saveButton = document.getElementById('save-journal');
+        saveButton.disabled = false;
+        saveButton.textContent = 'Save Entry';
+      }
+    }
+    
+    // Load journal entries
+    function loadJournalEntries() {
+      const entriesList = document.getElementById('journal-entries-list');
+      const emptyState = document.getElementById('empty-journal-state');
+      
+      // Show loading state
+      entriesList.innerHTML = '<div class="loading-message">Loading your journal entries...</div>';
+      emptyState.style.display = 'none';
+      
+      // Get entries from localStorage
+      const entries = JSON.parse(localStorage.getItem('sobrkey_journal_entries') || '[]');
+      
+      // Sort entries by date (newest first)
+      entries.sort((a, b) => new Date(b.date) - new Date(a.date));
+      
+      // Check if there are any entries
+      if (entries.length === 0) {
+        entriesList.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+      }
+      
+      // Display entries
+      entriesList.innerHTML = '';
+      for (const entry of entries) {
+        const date = new Date(entry.date);
+        const formattedDate = date.toLocaleDateString('en-US', {
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric'
+        });
+        
+        const formattedTime = date.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        
+        const entryElement = document.createElement('div');
+        entryElement.className = 'journal-entry-item';
+        
+        // Truncate content if it's too long
+        const truncatedContent = entry.content.length > 150 
+          ? entry.content.substring(0, 150) + '...' 
+          : entry.content;
+          
+        entryElement.innerHTML = `
+          <div class="journal-entry-header">
+            <span class="journal-entry-date">${formattedDate}</span>
+            <span class="journal-entry-time">${formattedTime}</span>
+          </div>
+          <div class="journal-entry-content">${truncatedContent}</div>
+          <div class="journal-entry-actions">
+            <button class="btn btn-sm btn-secondary view-entry" data-id="${entry.id}">View Full Entry</button>
+          </div>
+        `;
+        
+        entriesList.appendChild(entryElement);
+      }
+      
+      // Add event listeners for view buttons
+      document.querySelectorAll('.view-entry').forEach(button => {
+        button.addEventListener('click', function() {
+          const entryId = this.getAttribute('data-id');
+          viewFullEntry(entryId);
+        });
+      });
+    }
+    
+    // View full journal entry
+    function viewFullEntry(entryId) {
+      const entries = JSON.parse(localStorage.getItem('sobrkey_journal_entries') || '[]');
+      const entry = entries.find(e => e.id === entryId);
+      
+      if (!entry) {
+        alert('Entry not found');
+        return;
+      }
+      
+      const date = new Date(entry.date);
+      const formattedDate = date.toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
+      });
+      
+      const formattedTime = date.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      
+      // Create modal to show full entry
+      const modal = document.createElement('div');
+      modal.className = 'modal';
+      modal.innerHTML = `
+        <div class="modal-content">
+          <span class="modal-close">&times;</span>
+          <h3>Journal Entry</h3>
+          <div class="modal-date">${formattedDate} at ${formattedTime}</div>
+          <div class="modal-entry-content">${entry.content}</div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      // Close modal functionality
+      modal.querySelector('.modal-close').addEventListener('click', function() {
+        document.body.removeChild(modal);
+      });
+      
+      // Close on outside click
+      modal.addEventListener('click', function(event) {
+        if (event.target === modal) {
+          document.body.removeChild(modal);
+        }
+      });
+    }
+  </script>
+  
+  <style>
+    /* Journal History Styles */
+    .journal-history-section {
+      background-color: var(--background-lighter);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+      margin-top: 30px;
+    }
+    
+    .journal-entries {
+      margin-top: 20px;
+    }
+    
+    .journal-entry-item {
+      background-color: var(--background-light);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 15px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .journal-entry-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    }
+    
+    .journal-entry-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    
+    .journal-entry-date {
+      font-weight: 600;
+      color: var(--primary-color);
+    }
+    
+    .journal-entry-time {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+    
+    .journal-entry-content {
+      color: var(--text-primary);
+      margin-bottom: 15px;
+      white-space: pre-line;
+      line-height: 1.5;
+    }
+    
+    .journal-entry-actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+    
+    .loading-message {
+      text-align: center;
+      padding: 20px;
+      color: var(--text-secondary);
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 30px;
+      color: var(--text-secondary);
+      background-color: var(--background-light);
+      border-radius: 12px;
+      margin-top: 20px;
+    }
+    
+    .empty-state p {
+      margin: 10px 0;
+    }
+    
+    /* Modal styles */
+    .modal {
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal-content {
+      background-color: var(--background-lighter);
+      margin: auto;
+      padding: 30px;
+      border-radius: 16px;
+      max-width: 800px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      position: relative;
+    }
+    
+    .modal-close {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      color: var(--text-secondary);
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    
+    .modal-date {
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+      font-size: 0.9rem;
+    }
+    
+    .modal-entry-content {
+      color: var(--text-primary);
+      white-space: pre-line;
+      line-height: 1.6;
+    }
+  </style>
+</body>
+</html>

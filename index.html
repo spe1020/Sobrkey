@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1.00001, viewport-fit=cover"
+    />
+    <title>NostrCare</title>
+    <style>
+      html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        background-color: #f0f0f0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      }
+      #root {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        background-color: #e0e0e0;
+        color: #333;
+      }
+      .loading {
+        font-size: 24px;
+        font-weight: bold;
+        text-align: center;
+        margin: 20px;
+        padding: 20px;
+        border: 3px solid #666;
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      }
+      .loading-spinner {
+        border: 6px solid #f3f3f3;
+        border-top: 6px solid #3498db;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        margin: 20px auto;
+        animation: spin 2s linear infinite;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <!-- This content will be replaced by React when it loads -->
+      <div class="loading">
+        <div>NostrCare is loading...</div>
+        <div class="loading-spinner"></div>
+        <div>If you see this message for more than a few seconds, there might be an issue with the app initialization.</div>
+      </div>
+    </div>
+    <script>
+      // Add a global error handler to catch any initialization errors
+      window.onerror = function(message, source, lineno, colno, error) {
+        console.error('Global error:', message, error);
+        
+        // Display error in UI
+        var rootElement = document.getElementById('root');
+        if (rootElement) {
+          rootElement.innerHTML = '<div class="loading" style="color: red;">' +
+            '<div>NostrCare Error:</div>' +
+            '<div>' + message + '</div>' +
+            '<div>Check the browser console for details.</div>' +
+            '</div>';
+        }
+        
+        return true; // prevents the default error handling
+      };
+    </script>
+  </body>
+</html>
