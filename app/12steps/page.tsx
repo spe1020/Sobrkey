@@ -6,6 +6,7 @@ import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Check, Lock, ChevronRight } from "lucide-react"
 import Link from "next/link"
+import { useNostr } from "@/hooks/useNostr"
 
 const steps = [
   {
@@ -60,14 +61,19 @@ const steps = [
 
 export default function TwelveStepsPage() {
   const router = useRouter()
+  const { publicKey } = useNostr()
   const [completedSteps, setCompletedSteps] = useState<number[]>([])
 
   useEffect(() => {
-    const savedProgress = localStorage.getItem('sobr-12step-progress')
+    if (!publicKey) return
+    const savedProgress = localStorage.getItem(`sobr-12step-progress-${publicKey}`)
     if (savedProgress) {
       setCompletedSteps(JSON.parse(savedProgress))
+    } else {
+      // Clear completed steps if no progress exists for this key
+      setCompletedSteps([])
     }
-  }, [])
+  }, [publicKey])
 
   const isStepCompleted = (stepNumber: number) => completedSteps.includes(stepNumber)
   const isStepAvailable = (stepNumber: number) => {

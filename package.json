@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@emoji-mart/data": "^1.2.1",
+    "@emoji-mart/react": "^1.1.1",
     "@hookform/resolvers": "^3.9.1",
     "@noble/hashes": "^1.7.2",
     "@noble/secp256k1": "^2.2.3",

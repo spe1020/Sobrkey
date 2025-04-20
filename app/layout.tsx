@@ -1,20 +1,30 @@
 import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
 import './globals.css'
+import { MobileNav } from '@/components/mobile-nav'
+
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.dev',
+  title: 'Sobrkey',
+  description: 'A decentralized community for recovery and personal growth',
 }
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className={inter.className}>
+        <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
+          <main className="pb-16">
+            {children}
+          </main>
+          <MobileNav />
+        </div>
+      </body>
     </html>
   )
 }

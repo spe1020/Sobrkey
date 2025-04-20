@@ -79,7 +79,8 @@ const steps = [
 export default function StepPage({ params }: { params: Promise<{ stepNumber: string }> }) {
   const router = useRouter()
   const { stepNumber } = use(params)
-  const step = steps[parseInt(stepNumber) - 1]
+  const currentStep = parseInt(stepNumber, 10)
+  const step = steps[currentStep - 1]
   const [reflection, setReflection] = useState("")
   const [isCompleted, setIsCompleted] = useState(false)
   const [isChatOpen, setIsChatOpen] = useState(false)
@@ -91,51 +92,68 @@ export default function StepPage({ params }: { params: Promise<{ stepNumber: str
   ])
   const [chatInput, setChatInput] = useState("")
   const [isTyping, setIsTyping] = useState(false)
-  const { privateKey } = useNostr()
+  const { privateKey, publicKey } = useNostr()
   const { toast } = useToast()
 
   useEffect(() => {
-    const savedProgress = localStorage.getItem('sobr-12step-progress')
+    const savedProgress = localStorage.getItem(`sobr-12step-progress-${publicKey}`)
     const progress = savedProgress ? JSON.parse(savedProgress) : []
-    setIsCompleted(progress.includes(parseInt(stepNumber)))
-  }, [stepNumber])
+    setIsCompleted(progress.includes(parseInt(stepNumber, 10)))
+  }, [stepNumber, publicKey])
+
+  useEffect(() => {
+    const savedReflection = localStorage.getItem(`sobr-12step-reflection-${publicKey}-${stepNumber}`)
+    if (savedReflection) {
+      setReflection(savedReflection)
+    }
+  }, [stepNumber, publicKey])
 
   const handleCompleteStep = async () => {
-    if (!reflection.trim()) {
+    if (!reflection) {
       toast({
         title: "Reflection Required",
-        description: "Please take a moment to reflect on this step before completing it.",
-        variant: "destructive",
+        description: "Please write a reflection before completing this step",
+        variant: "destructive"
       })
       return
     }
 
     try {
-      // Save progress to localStorage
-      const savedProgress = localStorage.getItem('sobr-12step-progress')
-      const progress = savedProgress ? JSON.parse(savedProgress) : []
+      const savedProgress = localStorage.getItem(`sobr-12step-progress-${publicKey}`)
+      const completedSteps = savedProgress ? JSON.parse(savedProgress) : []
+      const currentStep = parseInt(stepNumber, 10)
       
-      if (!progress.includes(parseInt(stepNumber))) {
-        const newProgress = [...progress, parseInt(stepNumber)]
-        localStorage.setItem('sobr-12step-progress', JSON.stringify(newProgress))
+      if (!completedSteps.includes(currentStep)) {
+        completedSteps.push(currentStep)
+        localStorage.setItem(`sobr-12step-progress-${publicKey}`, JSON.stringify(completedSteps))
       }
 
-      // Publish reflection to Nostr with enhanced context
-      if (privateKey) {
-        const noteContent = `Step ${step.number} of 12: ${step.title}\n\nReflection:\n${reflection}\n\n#sobrkey-12stepjourney #step${step.number}`
-        await publishNote(noteContent, privateKey)
+      const reflectionKey = `sobr-12step-reflection-${publicKey}-${stepNumber}`
+      localStorage.setItem(reflectionKey, reflection)
+
+      if (!privateKey) {
         toast({
-          title: "Step Completed",
-          description: "Your reflection has been saved and shared with the community.",
+          title: "Error",
+          description: "Unable to publish reflection. Please try again.",
+          variant: "destructive"
         })
+        return
       }
 
+      const noteContent = `12 Step Journey - Step ${stepNumber}: ${steps[currentStep - 1].title}\n\nReflection:\n${reflection}\n\n#sobrkey-12stepjourney #step${stepNumber}`
+      await publishNote(noteContent, privateKey)
+
+      toast({
+        title: "Success",
+        description: "Step completed and reflection saved!",
+      })
       router.push('/12steps')
     } catch (error) {
+      console.error('Error completing step:', error)
       toast({
         title: "Error",
-        description: "Failed to save your reflection. Please try again.",
-        variant: "destructive",
+        description: "Failed to save progress. Please try again.",
+        variant: "destructive"
       })
     }
   }

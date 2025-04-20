@@ -17,8 +17,7 @@ export const useNostr = () => {
         try {
           const { type, data } = nip19.decode(storedNsec);
           if (type === 'nsec') {
-            const privateKeyHex = bytesToHex(data as Uint8Array);
-            setPrivateKey(privateKeyHex);
+            setPrivateKey(storedNsec);
             setPublicKey(getPublicKey(data as Uint8Array));
           }
         } catch (error) {
@@ -46,8 +45,7 @@ export const useNostr = () => {
     localStorage.setItem(STORAGE_KEY, generatedKey);
     const { type, data } = nip19.decode(generatedKey);
     if (type === 'nsec') {
-      const privateKeyHex = bytesToHex(data as Uint8Array);
-      setPrivateKey(privateKeyHex);
+      setPrivateKey(generatedKey);
       setPublicKey(getPublicKey(data as Uint8Array));
     }
     setGeneratedKey(null);
@@ -64,7 +62,7 @@ export const useNostr = () => {
       const importedPublicKey = getPublicKey(importedPrivateKey);
       
       localStorage.setItem(STORAGE_KEY, nsec);
-      setPrivateKey(bytesToHex(importedPrivateKey));
+      setPrivateKey(nsec);
       setPublicKey(importedPublicKey);
     } catch (error) {
       console.error('Failed to import key:', error);
