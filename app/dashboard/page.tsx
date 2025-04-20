@@ -24,10 +24,10 @@ import { FloatingActionButton } from "@/components/floating-action-button"
 import { motion } from "framer-motion"
 import { Textarea } from "@/components/ui/textarea"
 
-type Tab = "public" | "chat-with-mira" | "lets-talk" | "about" | "12steps" | "private-journal" | "emergency" | "profile"
+type Tab = "public" | "chat-with-mira" | "lets-talk" | "about" | "12steps" | "emergency" | "profile"
 
 // These are the tabs that will be shown in the top navigation
-const visibleTabs: Tab[] = ["public", "lets-talk", "about", "12steps", "private-journal", "emergency"]
+const visibleTabs: Tab[] = ["public", "lets-talk", "about", "12steps", "emergency"]
 
 interface EmojiSelection {
   id: string;
@@ -961,75 +961,6 @@ export default function DashboardPage() {
             </div>
           </div>
         )
-      case "private-journal":
-        return (
-          <div className="max-w-2xl mx-auto">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-              <div className="text-center space-y-4">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-purple-100 mb-4">
-                  <svg
-                    className="w-8 h-8 text-purple-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                    />
-                  </svg>
-                </div>
-                <h2 className="text-2xl font-bold text-gray-900">Private Journal</h2>
-                <p className="text-gray-600">
-                  Coming soon: A private space for your personal reflections and thoughts.
-                </p>
-                <div className="space-y-4 text-left">
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0 mt-1">
-                      <div className="w-2 h-2 rounded-full bg-purple-600"></div>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-gray-900">End-to-End Encryption</h3>
-                      <p className="text-sm text-gray-600">
-                        Your private thoughts will be encrypted and accessible only to you.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0 mt-1">
-                      <div className="w-2 h-2 rounded-full bg-purple-600"></div>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-gray-900">Daily Prompts</h3>
-                      <p className="text-sm text-gray-600">
-                        Receive personalized prompts to guide your reflection and growth.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0 mt-1">
-                      <div className="w-2 h-2 rounded-full bg-purple-600"></div>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-gray-900">Progress Tracking</h3>
-                      <p className="text-sm text-gray-600">
-                        Track your emotional and recovery journey over time.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="pt-4">
-                  <p className="text-sm text-gray-500">
-                    Stay tuned for updates on this exciting new feature!
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )
       case "emergency":
         return (
           <div className="max-w-2xl mx-auto">
@@ -1195,10 +1126,10 @@ export default function DashboardPage() {
             </div>
           </div>
         )
-      case "public":
-        return renderPublicContent();
+      case "profile":
+        return renderProfileContent()
       default:
-        return null
+        return renderPublicContent()
     }
   }
 

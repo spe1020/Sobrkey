@@ -5,7 +5,6 @@ A decentralized sobriety tracking and community support application built on Nos
 ## Features
 
 - 12-step journey tracking
-- Private journaling
 - Public community support
 - Emergency resources
 - Zap-based donations

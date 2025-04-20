@@ -166,21 +166,6 @@ export function subscribeToZaps(eventId: string, callback: (event: Event) => voi
   };
 }
 
-export function subscribeToJournal(callback: (event: Event) => void) {
-  const filter: Filter = {
-    kinds: [30023],
-    '#d': ['sobr-journal']
-  };
-
-  const sub = pool.subscribe(RELAYS, filter, {
-    onevent: callback
-  });
-
-  return () => {
-    sub.close();
-  };
-}
-
 // Clean up pool when app unmounts
 export function cleanup() {
   pool.close(RELAYS);
