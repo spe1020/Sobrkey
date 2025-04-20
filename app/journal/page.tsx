@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { formatDistanceToNow } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
@@ -17,12 +17,19 @@ export default function JournalPage() {
   const router = useRouter()
 
   // Load entries from localStorage on mount
-  useState(() => {
+  useEffect(() => {
     const savedEntries = localStorage.getItem("journalEntries")
     if (savedEntries) {
-      setEntries(JSON.parse(savedEntries))
+      try {
+        const parsedEntries = JSON.parse(savedEntries)
+        setEntries(parsedEntries)
+      } catch (error) {
+        console.error("Failed to parse journal entries:", error)
+        // If parsing fails, reset to empty array
+        setEntries([])
+      }
     }
-  })
+  }, []) // Empty dependency array means this only runs once on mount
 
   const handleNewEntry = () => {
     router.push("/new-entry")

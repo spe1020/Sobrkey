@@ -5,27 +5,63 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { ArrowLeft } from "lucide-react"
+import { useToast } from "@/components/ui/use-toast"
 
 export default function NewEntryPage() {
   const [content, setContent] = useState("")
   const router = useRouter()
+  const { toast } = useToast()
 
   const handleSave = () => {
     if (!content.trim()) return
 
-    const entries = JSON.parse(localStorage.getItem("journalEntries") || "[]")
-    const newEntry = {
-      id: Date.now().toString(),
-      content: content.trim(),
-      timestamp: Date.now(),
+    try {
+      // Get existing entries with error handling
+      let entries = []
+      try {
+        const savedEntries = localStorage.getItem("journalEntries")
+        if (savedEntries) {
+          entries = JSON.parse(savedEntries)
+        }
+      } catch (error) {
+        console.error("Failed to load existing entries:", error)
+        entries = []
+      }
+
+      // Create new entry
+      const newEntry = {
+        id: Date.now().toString(),
+        content: content.trim(),
+        timestamp: Date.now(),
+      }
+
+      // Save to localStorage with error handling
+      try {
+        localStorage.setItem(
+          "journalEntries",
+          JSON.stringify([newEntry, ...entries])
+        )
+        toast({
+          title: "Success",
+          description: "Journal entry saved successfully",
+        })
+        router.push("/journal")
+      } catch (error) {
+        console.error("Failed to save entry:", error)
+        toast({
+          title: "Error",
+          description: "Failed to save journal entry. Please try again.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Unexpected error:", error)
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      })
     }
-
-    localStorage.setItem(
-      "journalEntries",
-      JSON.stringify([newEntry, ...entries])
-    )
-
-    router.push("/journal")
   }
 
   return (
