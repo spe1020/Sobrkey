@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useNostr } from "@/lib/nostr"
-import { publishNote, publishReaction, publishComment, publishZapRequest, subscribeToTag, subscribeToComments, subscribeToZaps } from "@/lib/nostr"
+import { publishNote, publishReaction, publishComment, subscribeToTag, subscribeToComments } from "@/lib/nostr"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/components/ui/use-toast"
-import { LogOut, Send, KeySquare, ThumbsUp, MessageCircle, Zap, Plus, Search } from "lucide-react"
+import { LogOut, Send, KeySquare, ThumbsUp, MessageCircle, Plus, Search } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -17,26 +17,15 @@ import {
 import { QuoteGenerator } from "@/components/QuoteGenerator"
 import { useRouter } from "next/navigation"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import data from '@emoji-mart/data'
-import Picker from '@emoji-mart/react'
 import { MobileNav } from "@/components/mobile-nav"
 import { FloatingActionButton } from "@/components/floating-action-button"
 import { motion } from "framer-motion"
 import { Textarea } from "@/components/ui/textarea"
 
-type Tab = "public" | "chat-with-mira" | "lets-talk" | "about" | "12steps" | "emergency" | "profile"
+type Tab = "public" | "mira" | "meet" | "about" | "12steps" | "emergency" | "profile"
 
 // These are the tabs that will be shown in the top navigation
-const visibleTabs: Tab[] = ["public", "lets-talk", "about", "12steps", "emergency"]
-
-interface EmojiSelection {
-  id: string;
-  name: string;
-  native: string | null;
-  unified: string;
-  keywords: string[];
-  emoticons: string[];
-}
+const visibleTabs: Tab[] = ["public", "mira", "meet", "about", "12steps", "emergency"]
 
 interface Note {
   id: string;
@@ -45,17 +34,12 @@ interface Note {
   pubkey: string;
   tags?: string[][];
   reactions: {
-    [key: string]: {
-      emoji: string;
-      count: number;
-    }
+    likes: number;
   };
   comments: Comment[];
-  zaps: { amount: number; comment?: string }[];
   aggregatedCounts: {
     reactions: number;
     comments: number;
-    zaps: number;
   };
 }
 
@@ -64,10 +48,16 @@ interface Comment {
   content: string;
   created_at: number;
   pubkey: string;
-  replies?: Comment[];
+  kind: number;
+  tags?: string[][];
 }
 
-const CUTOFF_DATE = new Date('2025-04-19T20:00:00-04:00').getTime() / 1000; // Convert to Unix timestamp
+interface CommentRelationship {
+  parentId: string | null;
+  childIds: string[];
+}
+
+const CUTOFF_DATE = new Date('2025-04-23T20:00:00-04:00').getTime() / 1000; // April 23, 2025 at 8PM ET
 
 // Update the ZapEvent interface
 interface ZapEvent {
@@ -91,25 +81,32 @@ interface NostrEvent {
   sig: string;
 }
 
-export default function DashboardPage() {
+type NostrSubscription = () => void;
+
+interface SubscriptionMap {
+  [key: string]: (() => void)[];
+}
+
+const getReplyParentId = (comment: Comment): string | null => {
+  // find the 'reply' tag; if absent, this is a direct comment on the note
+  const replyTag = comment.tags?.find(t => t[0] === 'e' && t[2] === 'reply')
+  return replyTag ? replyTag[1] : null
+}
+
+const DashboardPage = () => {
   const [activeTab, setActiveTab] = useState<Tab>("public")
   const [content, setContent] = useState("")
   const [notes, setNotes] = useState<Note[]>([])
   const [commentInputs, setCommentInputs] = useState<{ [key: string]: string }>({})
   const [expandedComments, setExpandedComments] = useState<{ [key: string]: boolean }>({})
-  const [zapAmounts, setZapAmounts] = useState<{ [key: string]: string }>({})
-  const [zapComments, setZapComments] = useState<{ [key: string]: string }>({})
   const [isPostingNote, setIsPostingNote] = useState(false)
   const { privateKey, publicKey, logout } = useNostr()
   const { toast } = useToast()
   const router = useRouter()
-  const [isZapDialogOpen, setIsZapDialogOpen] = useState(false)
-  const [zapAmount, setZapAmount] = useState("")
-  const [zapComment, setZapComment] = useState("")
   const [localResources, setLocalResources] = useState<any[]>([])
   const [isLoadingLocal, setIsLoadingLocal] = useState(false)
   const [aggregatedNotes, setAggregatedNotes] = useState<{ [key: string]: Note['aggregatedCounts'] }>({})
-  const [emojiReactions, setEmojiReactions] = useState<{ [key: string]: { [emoji: string]: number } }>({})
+  const [reactions, setReactions] = useState<{ [key: string]: number }>({})
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const [activePublicView, setActivePublicView] = useState<"notes" | "replies">("notes")
   const [selectedParentNote, setSelectedParentNote] = useState<Note | null>(null)
@@ -118,12 +115,136 @@ export default function DashboardPage() {
   const [newNoteContent, setNewNoteContent] = useState("")
   const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
   const tabParam = searchParams.get('tab') as Tab | null
+  const [isDarkMode, setIsDarkMode] = useState(false)
+  const commentSubscriptions = useRef<Map<string, () => void>>(new Map())
+  const processedCommentIds = useRef<Set<string>>(new Set())
+  const processedNoteIds = useRef<Set<string>>(new Set())
+  const noteSubscription = useRef<(() => void) | null>(null)
+  const [commentsByNoteId, setCommentsByNoteId] = useState<Record<string, Record<string, Comment>>>({})
+  const [commentRelationships, setCommentRelationships] = useState<Record<string, CommentRelationship>>({})
+
+  // Add debug logging for comment state changes
+  useEffect(() => {
+    console.log('Comment state changed:', {
+      commentsByNoteId: Object.entries(commentsByNoteId).map(([noteId, comments]) => ({
+        noteId,
+        commentCount: Object.keys(comments).length,
+        comments: Object.entries(comments).map(([id, comment]) => ({
+          id,
+          content: comment.content,
+          kind: comment.kind,
+          tags: comment.tags,
+          created_at: new Date(comment.created_at * 1000).toISOString()
+        }))
+      })),
+      commentRelationships: Object.entries(commentRelationships)
+        .map(([id, rel]) => ({
+          id,
+          parentId: rel.parentId,
+          childCount: rel.childIds.length,
+          childIds: rel.childIds
+        })),
+      expandedComments: Object.entries(expandedComments)
+        .filter(([_, isExpanded]) => isExpanded)
+        .map(([noteId]) => noteId)
+    });
+  }, [commentsByNoteId, commentRelationships, expandedComments]);
+
+  // Add debug logging for note expansion and comment loading
+  useEffect(() => {
+    const expandedNoteIds = Object.entries(expandedComments)
+      .filter(([_, isExpanded]) => isExpanded)
+      .map(([noteId]) => noteId);
+
+    console.log('Note expansion state:', {
+      expandedNotes: expandedNoteIds,
+      expandedNoteCount: expandedNoteIds.length,
+      totalNotes: notes.length,
+      notesWithComments: Object.keys(commentsByNoteId).length
+    });
+
+    // Log detailed information for each expanded note
+    expandedNoteIds.forEach(noteId => {
+      const noteComments = commentsByNoteId[noteId] || {};
+      const topLevelComments = getTopLevelComments(noteId);
+      
+      console.log(`Note ${noteId} details:`, {
+        totalComments: Object.keys(noteComments).length,
+        topLevelComments: topLevelComments.length,
+        commentIds: Object.keys(noteComments),
+        relationships: Object.entries(commentRelationships)
+          .filter(([_, rel]) => rel.parentId === noteId)
+          .map(([id, rel]) => ({
+            id,
+            childCount: rel.childIds.length,
+            childIds: rel.childIds
+          }))
+      });
+    });
+  }, [expandedComments, notes, commentsByNoteId, commentRelationships]);
+
+  // Add debug logging for comment subscription changes
+  useEffect(() => {
+    console.log('Comment subscription state:', {
+      activeSubscriptions: commentSubscriptions.current.size,
+      processedCommentIds: processedCommentIds.current.size,
+      processedNoteIds: processedNoteIds.current.size
+    });
+  }, [commentSubscriptions.current, processedCommentIds.current, processedNoteIds.current]);
+
+  // Add debug logging for comment input changes
+  useEffect(() => {
+    const activeInputs = Object.entries(commentInputs)
+      .filter(([_, value]) => value.trim().length > 0)
+      .map(([noteId, value]) => ({
+        noteId,
+        length: value.length
+      }));
+
+    console.log('Comment input state:', {
+      activeInputs,
+      totalInputs: Object.keys(commentInputs).length
+    });
+  }, [commentInputs]);
+
+  // Add debug logging for reply state
+  useEffect(() => {
+    if (replyingTo) {
+      console.log('Reply state:', {
+        replyingTo,
+        parentComment: commentsByNoteId[replyingTo]?.[replyingTo],
+        parentNoteId: Object.keys(commentsByNoteId).find(noteId => 
+          commentsByNoteId[noteId]?.[replyingTo] !== undefined
+        )
+      });
+    }
+  }, [replyingTo, commentsByNoteId]);
 
   useEffect(() => {
     if (tabParam && visibleTabs.includes(tabParam)) {
       setActiveTab(tabParam)
     }
   }, [tabParam])
+
+  useEffect(() => {
+    // Check for saved dark mode preference
+    const savedDarkMode = localStorage.getItem('darkMode') === 'true'
+    setIsDarkMode(savedDarkMode)
+    if (savedDarkMode) {
+      document.documentElement.classList.add('dark')
+    }
+  }, [])
+
+  const toggleDarkMode = () => {
+    const newDarkMode = !isDarkMode
+    setIsDarkMode(newDarkMode)
+    localStorage.setItem('darkMode', String(newDarkMode))
+    if (newDarkMode) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  }
 
   const handleTabChange = (tab: Tab) => {
     setActiveTab(tab)
@@ -149,96 +270,275 @@ export default function DashboardPage() {
     }
   }
 
-  const updateNoteCounts = async (noteId: string) => {
-    try {
-      // Subscribe to reactions for this note
-      const unsubReactions = subscribeToTag(`${noteId}-reaction`, (event) => {
-        if (event.kind === 7) {
-          const emoji = (event.content || '👍').trim(); // Ensure we have a valid string
-          setEmojiReactions(prev => ({
-            ...prev,
-            [noteId]: {
-              ...(prev[noteId] || {}),
-              [emoji]: ((prev[noteId] || {})[emoji] || 0) + 1
-            }
-          }));
-          
-          setAggregatedNotes(prev => ({
-            ...prev,
-            [noteId]: {
-              ...prev[noteId] || { reactions: 0, comments: 0, zaps: 0 },
-              reactions: (prev[noteId]?.reactions || 0) + 1
-            }
-          }));
-        }
-      });
+  const updateNoteCounts = (noteId: string) => {
+    const noteComments = commentsByNoteId[noteId] || {};
+    const commentIds = Object.keys(noteComments);
+    
+    // Get all kind 1111 comments for this note
+    const allComments = commentIds
+      .map(id => noteComments[id])
+      .filter(comment => comment.kind === 1111);
+    
+    // Count comments
+    const totalComments = allComments.length;
 
-      // Subscribe to comments for this note
-      const unsubComments = subscribeToComments(noteId, (event) => {
-        setAggregatedNotes(prev => ({
-          ...prev,
-          [noteId]: {
-            ...prev[noteId] || { reactions: 0, comments: 0, zaps: 0 },
-            comments: (prev[noteId]?.comments || 0) + 1
-          }
-        }));
-      });
+    console.log(`Updating counts for note ${noteId}:`, {
+      totalComments,
+      commentIds: commentIds.length,
+      kind1111Comments: allComments.length,
+      relationships: Object.keys(commentRelationships).length
+    });
+    
+    setAggregatedNotes(prev => ({
+      ...prev,
+      [noteId]: {
+        ...prev[noteId],
+        comments: totalComments
+      }
+    }));
+  };
 
-      // Subscribe to zaps for this note
-      const unsubZaps = subscribeToZaps(noteId, (event) => {
-        // Extract zap amount from event tags
-        const zapAmount = event.tags.find(tag => tag[0] === 'amount')?.[1];
-        if (zapAmount) {
-          setAggregatedNotes(prev => ({
-            ...prev,
-            [noteId]: {
-              ...prev[noteId] || { reactions: 0, comments: 0, zaps: 0 },
-              zaps: (prev[noteId]?.zaps || 0) + parseInt(zapAmount, 10)
-            }
-          }));
-        }
-      });
+  // Helper functions for comment management
+  const getTopLevelComments = (noteId: string): string[] => {
+    const commentIds = Object.keys(commentsByNoteId[noteId] || {});
+    return commentIds.filter(id => {
+      const comment = commentsByNoteId[noteId][id];
+      // Only show kind 1111 comments that are direct replies to the note
+      return comment.kind === 1111 && comment.tags?.some(t => 
+        t[0] === 'e' && t[1] === noteId && t[2] === 'root'
+      );
+    });
+  };
 
-      return () => {
-        unsubReactions();
-        unsubComments();
-        unsubZaps();
+  const getChildComments = (commentId: string): string[] => {
+    const childIds = commentRelationships[commentId]?.childIds || [];
+    return childIds.filter(id => {
+      // Find the note this comment belongs to by searching through all notes
+      const foundNoteId = Object.keys(commentsByNoteId).find((currentNoteId: string) => 
+        commentsByNoteId[currentNoteId][id] !== undefined
+      );
+      
+      if (!foundNoteId) return false;
+      
+      const comment = commentsByNoteId[foundNoteId][id];
+      // Only return kind 1111 events (threaded comments)
+      return comment.kind === 1111;
+    });
+  };
+
+  const toggleComments = (noteId: string) => {
+    console.log('Toggling comments for note:', noteId, {
+      currentState: expandedComments[noteId],
+      hasComments: commentsByNoteId[noteId] !== undefined
+    });
+
+    setExpandedComments(prev => {
+      const newState = {
+        ...prev,
+        [noteId]: !prev[noteId]
       };
+
+      // If we're expanding the note and it has no comments yet, trigger a comment load
+      if (!prev[noteId] && !commentsByNoteId[noteId]) {
+        console.log('Note expanded without comments, triggering comment load');
+        // The subscription will handle loading comments
+      }
+
+      return newState;
+    });
+  };
+
+  const handleComment = async (noteId: string, commentContent: string, parentCommentId?: string) => {
+    if (!privateKey) {
+      console.error('Cannot publish comment: private key not available');
+      return;
+    }
+
+    try {
+      // All comments in the thread should be kind 1111
+      const kind = 1111;
+      
+      // Create the appropriate tags
+      const tags = parentCommentId
+        ? [['e', noteId, 'root'], ['e', parentCommentId, 'reply']]
+        : [['e', noteId, 'root']];
+
+      console.log('Publishing comment:', {
+        kind,
+        tags,
+        parentCommentId: parentCommentId || 'none'
+      });
+
+      // Publish the comment and get the event
+      const event = await publishComment(privateKey, noteId, commentContent, parentCommentId || '', kind);
+      
+      if (!event) {
+        throw new Error('Failed to publish comment');
+      }
+
+      // Create a temporary comment object
+      const newComment: Comment = {
+        id: event.id,
+        content: event.content,
+        created_at: event.created_at,
+        pubkey: event.pubkey,
+        kind,
+        tags
+      };
+
+      // Update commentsByNoteId
+      setCommentsByNoteId(prev => {
+        const noteComments = {...(prev[noteId] || {})};
+        noteComments[event.id] = newComment;
+        return {...prev, [noteId]: noteComments};
+      });
+
+      // Update relationships
+      setCommentRelationships(prev => {
+        if (parentCommentId) {
+          // Update parent's childIds
+          const parentRel = prev[parentCommentId] || {parentId: noteId, childIds: []};
+          return {
+            ...prev,
+            [parentCommentId]: {
+              ...parentRel,
+              childIds: [...new Set([...parentRel.childIds, event.id])]
+            },
+            [event.id]: {parentId: parentCommentId, childIds: []}
+          };
+        } else {
+          // This is a top-level comment
+          return {
+            ...prev,
+            [event.id]: {parentId: noteId, childIds: []}
+          };
+        }
+      });
+
+      // Clear the input field for the specific note or comment
+      setCommentInputs(prev => {
+        const newInputs = {...prev};
+        if (parentCommentId) {
+          // Clear reply input
+          delete newInputs[parentCommentId];
+        } else {
+          // Clear note input
+          delete newInputs[noteId];
+        }
+        return newInputs;
+      });
+      
+      // Update counts immediately
+      setTimeout(() => updateNoteCounts(noteId), 100);
+
+      // Ensure the note is expanded to show the new comment
+      if (!expandedComments[noteId]) {
+        setExpandedComments(prev => ({
+          ...prev,
+          [noteId]: true
+        }));
+      }
     } catch (error) {
-      console.error('Error updating note counts:', error);
+      console.error('Error publishing comment:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to publish comment. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
+  // Add effect to handle comment input state
   useEffect(() => {
-    if (!publicKey) return;
-
-    const unsubscribe = subscribeToTag("sobrkey", (event) => {
-      if (event.kind === 1) {
-        if (event.created_at >= CUTOFF_DATE) {
-          const newNote = {
-            ...event,
-            reactions: {},
-            comments: [],
-            zaps: [],
-            aggregatedCounts: {
-              reactions: 0,
-              comments: 0,
-              zaps: 0
-            }
-          };
-          
-          setNotes(prevNotes => [newNote, ...prevNotes]);
-          
-          // Start aggregating counts for the new note
-          updateNoteCounts(event.id);
-        }
+    // When a note is collapsed, clear its comment input
+    Object.entries(expandedComments).forEach(([noteId, isExpanded]) => {
+      if (!isExpanded && commentInputs[noteId]) {
+        setCommentInputs(prev => {
+          const newInputs = {...prev};
+          delete newInputs[noteId];
+          return newInputs;
+        });
       }
     });
+  }, [expandedComments, commentInputs]);
 
-    return () => {
-      unsubscribe();
+  // Add effect to handle comment loading when notes are expanded
+  useEffect(() => {
+    const expandedNoteIds = Object.entries(expandedComments)
+      .filter(([_, isExpanded]) => isExpanded)
+      .map(([noteId]) => noteId);
+
+    console.log('Handling expanded notes:', {
+      expandedNoteIds,
+      notesWithComments: Object.keys(commentsByNoteId)
+    });
+
+    // Ensure subscriptions are active for expanded notes
+    expandedNoteIds.forEach(noteId => {
+      if (!commentSubscriptions.current.has(noteId)) {
+        console.log('Setting up subscription for expanded note:', noteId);
+        // The subscription will be handled by the existing subscription effect
+      }
+    });
+  }, [expandedComments, commentsByNoteId]);
+
+  // Subscribe to comments for all notes on mount
+  useEffect(() => {
+    const subscribeToAllComments = async () => {
+      for (const note of notes) {
+        if (!commentSubscriptions.current.has(note.id)) {
+          const unsubscribe = await subscribeToComments(note.id, (event) => {
+            if (!processedCommentIds.current.has(event.id)) {
+              processedCommentIds.current.add(event.id);
+              
+              // Batch state updates
+              setCommentsByNoteId(prev => {
+                const noteComments = {...(prev[note.id] || {})};
+                noteComments[event.id] = {
+                  id: event.id,
+                  content: event.content,
+                  created_at: event.created_at,
+                  pubkey: event.pubkey,
+                  kind: event.kind,
+                  tags: event.tags
+                };
+                return {...prev, [note.id]: noteComments};
+              });
+
+              // Only update relationships for kind 1111 events
+              if (event.kind === 1111) {
+                const replyTag = event.tags.find(t => t[0] === 'e' && t[2] === 'reply');
+                const rootTag = event.tags.find(t => t[0] === 'e' && t[2] === 'root');
+                if (replyTag && rootTag) {
+                  setCommentRelationships(prev => ({
+                    ...prev,
+                    [replyTag[1]]: {
+                      parentId: rootTag[1],
+                      childIds: [...(prev[replyTag[1]]?.childIds || []), event.id]
+                    }
+                  }));
+                }
+              }
+            }
+          });
+          commentSubscriptions.current.set(note.id, unsubscribe);
+        }
+      }
     };
-  }, [publicKey]);
+
+    subscribeToAllComments();
+
+    // Cleanup function
+    return () => {
+      commentSubscriptions.current.forEach(unsubscribe => {
+        if (typeof unsubscribe === 'function') {
+          unsubscribe();
+        }
+      });
+      commentSubscriptions.current.clear();
+      processedCommentIds.current.clear();
+    };
+  }, [notes]);
 
   useEffect(() => {
     console.log('Cutoff date:', new Date(CUTOFF_DATE * 1000).toLocaleString());
@@ -249,44 +549,119 @@ export default function DashboardPage() {
     })));
   }, [notes]);
 
+  // Add debug logging for notes state changed
+  useEffect(() => {
+    console.log('Notes state changed:', {
+      count: notes.length,
+      notes: notes.map(note => ({
+        id: note.id,
+        content: note.content,
+        created_at: note.created_at
+      }))
+    });
+  }, [notes]);
+
+  // Subscribe to notes on mount
+  useEffect(() => {
+    const subscribeToNotes = async () => {
+      if (noteSubscription.current) return; // Prevent duplicate subscriptions
+
+      const unsubscribe = subscribeToTag('sobrkey', (event: NostrEvent) => {
+        if (!processedNoteIds.current.has(event.id)) {
+          processedNoteIds.current.add(event.id);
+          
+          setNotes(prevNotes => {
+            if (prevNotes.some(note => note.id === event.id)) {
+              return prevNotes;
+            }
+            
+            const newNote: Note = {
+              id: event.id,
+              content: event.content,
+              created_at: event.created_at,
+              pubkey: event.pubkey,
+              reactions: {
+                likes: 0
+              },
+              comments: [],
+              aggregatedCounts: {
+                reactions: 0,
+                comments: 0
+              }
+            };
+
+            return [newNote, ...prevNotes];
+          });
+        }
+      });
+      
+      noteSubscription.current = unsubscribe;
+    };
+
+    subscribeToNotes();
+
+    return () => {
+      if (noteSubscription.current) {
+        noteSubscription.current();
+        noteSubscription.current = null;
+      }
+      processedNoteIds.current.clear();
+    };
+  }, []);
+
   const handlePublish = async () => {
-    if (!publicKey || !privateKey || !newNoteContent.trim()) return;
+    if (!publicKey || !privateKey || !newNoteContent.trim()) {
+      toast({
+        title: "Error",
+        description: "Please write something before publishing",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       setIsPostingNote(true);
-      const event = await publishNote(newNoteContent, privateKey);
-      if (!event) throw new Error("Failed to publish note");
+      const event = await publishNote(newNoteContent.trim(), privateKey);
+      
+      if (!event) {
+        throw new Error("Failed to publish note");
+      }
 
-      const newNote: Note = {
-        id: event.id,
-        content: event.content,
-        created_at: event.created_at,
-        pubkey: event.pubkey,
-        reactions: {},
-        comments: [],
-        zaps: [],
-        aggregatedCounts: {
-          reactions: 0,
-          comments: 0,
-          zaps: 0
+      setNotes(prevNotes => {
+        if (prevNotes.some(note => note.id === event.id)) {
+          return prevNotes;
         }
-      };
+        
+        const newNote: Note = {
+          id: event.id,
+          content: event.content,
+          created_at: event.created_at,
+          pubkey: event.pubkey,
+          reactions: {
+            likes: 0
+          },
+          comments: [],
+          aggregatedCounts: {
+            reactions: 0,
+            comments: 0
+          }
+        };
 
-      setNotes(prev => [newNote, ...prev]);
+        return [newNote, ...prevNotes];
+      });
+      
       setNewNoteContent("");
       setIsNewNoteDialogOpen(false);
+      
       toast({
         title: "Success",
         description: "Your note has been published!",
       });
-
-      // Set up subscriptions for the new note
-      updateNoteCounts(event.id);
     } catch (error) {
       console.error("Error publishing note:", error);
       toast({
         title: "Error",
-        description: "Failed to publish note. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to publish note. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -295,258 +670,6 @@ export default function DashboardPage() {
   };
 
   const handleReaction = async (noteId: string) => {
-    if (!privateKey) return
-
-    try {
-      await publishReaction(privateKey, noteId)
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to react to note: " + (error as Error).message,
-        variant: "destructive",
-      })
-    }
-  }
-
-  const handleComment = async (noteId: string, parentCommentId?: string) => {
-    if (!privateKey || !publicKey) {
-      toast({
-        title: "Error",
-        description: "Please log in to post comments",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const commentContent = commentInputs[parentCommentId || noteId]
-    if (!commentContent?.trim()) return
-
-    try {
-      // Publish the comment to Nostr
-      await publishComment(privateKey, noteId, commentContent, parentCommentId)
-      
-      // Create a temporary comment
-      const tempComment = {
-        id: Date.now().toString(),
-        content: commentContent,
-        created_at: Math.floor(Date.now() / 1000),
-        pubkey: publicKey,
-        replies: []
-      };
-
-      // Update local state with the new comment
-      setNotes(prevNotes => prevNotes.map(note => {
-        if (note.id === noteId) {
-          if (parentCommentId) {
-            // Helper function to recursively update comments
-            const updateReplies = (comments: Comment[]): Comment[] => {
-              return comments.map(comment => {
-                if (comment.id === parentCommentId) {
-                  return {
-                    ...comment,
-                    replies: [...(comment.replies || []), tempComment]
-                  };
-                }
-                if (comment.replies?.length) {
-                  return {
-                    ...comment,
-                    replies: updateReplies(comment.replies)
-                  };
-                }
-                return comment;
-              });
-            };
-
-            return {
-              ...note,
-              comments: updateReplies(note.comments)
-            };
-          } else {
-            // Add as a top-level comment
-            return {
-              ...note,
-              comments: [...(note.comments || []), tempComment]
-            };
-          }
-        }
-        return note;
-      }));
-      
-      // Clear the input
-      setCommentInputs(prev => {
-        const newInputs = { ...prev };
-        delete newInputs[parentCommentId || noteId];
-        return newInputs;
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to post comment: " + (error as Error).message,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const isDuplicateComment = (comments: Comment[], newComment: Comment): boolean => {
-    // Check if comment already exists at current level
-    const isDuplicate = comments.some(
-      existing => 
-        existing.id === newComment.id || 
-        (existing.content === newComment.content && 
-         existing.created_at === newComment.created_at &&
-         existing.pubkey === newComment.pubkey)
-    );
-
-    if (isDuplicate) return true;
-
-    // Recursively check replies
-    return comments.some(comment => 
-      comment.replies && comment.replies.length > 0 && 
-      isDuplicateComment(comment.replies, newComment)
-    );
-  };
-
-  const toggleComments = (noteId: string) => {
-    setExpandedComments(prev => ({ ...prev, [noteId]: !prev[noteId] }));
-    
-    if (!expandedComments[noteId]) {
-      // Subscribe to comments when expanding
-      const unsubscribe = subscribeToComments(noteId, (event) => {
-        // Create the new comment object
-        const newComment = {
-          id: event.id,
-          content: event.content,
-          created_at: event.created_at,
-          pubkey: event.pubkey,
-          replies: []
-        };
-
-        // Find if this is a reply and to which comment
-        const replyToTag = event.tags.find(tag => tag[0] === 'e' && tag[2] === 'reply');
-        const parentId = replyToTag ? replyToTag[1] : null;
-
-        setNotes(prevNotes => prevNotes.map(note => {
-          if (note.id === noteId) {
-            let updatedComments = [...(note.comments || [])];
-            
-            if (parentId) {
-              // This is a reply - find the parent comment and add the reply
-              const addReplyToComment = (comments: Comment[]): Comment[] => {
-                return comments.map(comment => {
-                  if (comment.id === parentId) {
-                    // Check if reply already exists
-                    const replyExists = comment.replies?.some(reply => reply.id === newComment.id);
-                    if (!replyExists) {
-                      return {
-                        ...comment,
-                        replies: [...(comment.replies || []), newComment]
-                      };
-                    }
-                  }
-                  // Recursively check replies
-                  if (comment.replies?.length) {
-                    return {
-                      ...comment,
-                      replies: addReplyToComment(comment.replies)
-                    };
-                  }
-                  return comment;
-                });
-              };
-              updatedComments = addReplyToComment(updatedComments);
-            } else {
-              // This is a top-level comment
-              const commentExists = updatedComments.some(comment => comment.id === newComment.id);
-              if (!commentExists) {
-                updatedComments.push(newComment);
-              }
-            }
-
-            // Sort comments by timestamp (newest first)
-            const sortByTimestamp = (comments: Comment[]): Comment[] => {
-              const sorted = [...comments].sort((a, b) => b.created_at - a.created_at);
-              return sorted.map(comment => ({
-                ...comment,
-                replies: comment.replies?.length ? sortByTimestamp(comment.replies) : []
-              }));
-            };
-
-            return {
-              ...note,
-              comments: sortByTimestamp(updatedComments)
-            };
-          }
-          return note;
-        }));
-      });
-
-      return unsubscribe;
-    }
-  };
-
-  const handleZap = async (noteId: string) => {
-    if (!privateKey) return
-
-    const amount = parseInt(zapAmounts[noteId] || "0")
-    if (isNaN(amount) || amount <= 0) {
-      toast({
-        title: "Error",
-        description: "Please enter a valid amount",
-        variant: "destructive",
-      })
-      return
-    }
-
-    try {
-      await publishZapRequest(privateKey, noteId, amount, zapComments[noteId])
-      toast({
-        title: "Success",
-        description: "Zap request sent!",
-      })
-      setZapAmounts(prev => ({ ...prev, [noteId]: "" }))
-      setZapComments(prev => ({ ...prev, [noteId]: "" }))
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to send zap: " + (error as Error).message,
-        variant: "destructive",
-      })
-    }
-  }
-
-  const handleZapUs = async () => {
-    if (!privateKey) return
-
-    const amount = parseInt(zapAmount || "0")
-    if (isNaN(amount) || amount <= 0) {
-      toast({
-        title: "Error",
-        description: "Please enter a valid amount",
-        variant: "destructive",
-      })
-      return
-    }
-
-    try {
-      // Using a special note ID for the development zap
-      await publishZapRequest(privateKey, "development", amount, zapComment)
-      toast({
-        title: "Thank You!",
-        description: "Your support helps us continue building Sobrkey.",
-      })
-      setZapAmount("")
-      setZapComment("")
-      setIsZapDialogOpen(false)
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to send zap: " + (error as Error).message,
-        variant: "destructive",
-      })
-    }
-  }
-
-  const handleEmojiSelect = async (noteId: string, emoji: EmojiSelection) => {
     if (!privateKey) {
       toast({
         title: "Error",
@@ -557,21 +680,27 @@ export default function DashboardPage() {
     }
 
     try {
-      const emojiNative = emoji.native;
-      if (!emojiNative) {
-        throw new Error('No emoji selected');
-      }
+      await publishReaction(privateKey, noteId);
       
-      await publishReaction(privateKey, noteId, emojiNative);
-      
-      // Update local state
-      setEmojiReactions(prev => ({
+      // Update both the reactions state and the note's reaction count
+      setReactions(prev => ({
         ...prev,
-        [noteId]: {
-          ...(prev[noteId] || {}),
-          [emojiNative]: ((prev[noteId] || {})[emojiNative] || 0) + 1
-        }
+        [noteId]: (prev[noteId] || 0) + 1
       }));
+
+      setNotes(prevNotes => 
+        prevNotes.map(note => 
+          note.id === noteId 
+            ? {
+                ...note,
+                reactions: {
+                  ...note.reactions,
+                  likes: (note.reactions.likes || 0) + 1
+                }
+              }
+            : note
+        )
+      );
     } catch (error) {
       toast({
         title: "Error",
@@ -581,62 +710,59 @@ export default function DashboardPage() {
     }
   };
 
-  const renderComment = (noteId: string, comment: Comment, parentNote: Note) => {
-    const inputValue = commentInputs[comment.id] || "";
-    const isReplying = replyingTo === comment.id;
-    
+  const getShortKey = (pubkey: string) => {
+    return pubkey.slice(-4);
+  };
+
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp * 1000).toLocaleString();
+  };
+
+  const getNpub = (pubkey: string) => {
+    return pubkey.slice(0, 8) + '...' + pubkey.slice(-8);
+  };
+
+  const handleReply = (noteId: string, commentId: string) => {
+    setReplyingTo(replyingTo === commentId ? null : commentId);
+  };
+
+  const renderComment = (noteId: string, commentId: string, depth: number = 0) => {
+    const comment = commentsByNoteId[noteId]?.[commentId];
+    if (!comment) return null;
+
+    const relationship = commentRelationships[commentId] || { parentId: null, childIds: [] };
+    const childComments = relationship.childIds
+      .filter(id => commentsByNoteId[noteId]?.[id] !== undefined);
+
     return (
-      <div key={comment.id} className="space-y-3">
-        <div 
-          className="bg-gray-50 rounded p-3 cursor-pointer hover:bg-gray-100 transition-colors"
-          onClick={(e) => {
-            e.stopPropagation();
-            setSelectedComment({ comment, parentNote });
-          }}
-        >
-          <div className="text-xs text-gray-500 mb-1">
-            {new Date(comment.created_at * 1000).toLocaleString()}
+      <div key={commentId} className={`mt-2 ${depth > 0 ? 'ml-4' : ''}`}>
+        <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded-lg">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              {new Date(comment.created_at * 1000).toLocaleString()}
+            </span>
+            <span className="text-sm font-medium">
+              {comment.pubkey.slice(0, 8) + '...' + comment.pubkey.slice(-8)}
+            </span>
           </div>
-          <p className="text-sm text-gray-900">{comment.content}</p>
-          <div className="mt-2 flex items-center space-x-2">
-            <Button 
-              size="sm"
-              variant="ghost"
-              onClick={(e) => {
-                e.stopPropagation();
-                setReplyingTo(isReplying ? null : comment.id);
-              }}
-              className="text-xs"
+          <p className="mt-1 text-sm">{comment.content}</p>
+          <div className="mt-2 flex items-center gap-2">
+            <button
+              onClick={() => handleReply(noteId, commentId)}
+              className="text-sm text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
             >
-              {isReplying ? 'Cancel' : 'Reply'}
-            </Button>
+              Reply
+            </button>
+            {childComments.length > 0 && (
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                {childComments.length} {childComments.length === 1 ? 'reply' : 'replies'}
+              </span>
+            )}
           </div>
-          {isReplying && (
-            <div className="mt-2 relative" onClick={e => e.stopPropagation()}>
-              <Input
-                value={inputValue}
-                onChange={(e) => setCommentInputs(prev => ({ ...prev, [comment.id]: e.target.value }))}
-                placeholder="Write your reply..."
-                className="text-sm pr-12"
-              />
-              <Button 
-                size="sm"
-                className="absolute right-1 top-1 h-7"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleComment(noteId, comment.id);
-                  setReplyingTo(null);
-                }}
-                disabled={!inputValue.trim()}
-              >
-                <Send className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          )}
         </div>
-        {comment.replies && comment.replies.length > 0 && (
-          <div className="pl-4 border-l-2 border-gray-200 space-y-3">
-            {comment.replies.map(reply => renderComment(noteId, reply, parentNote))}
+        {expandedComments[noteId] && childComments.length > 0 && (
+          <div className="mt-2">
+            {childComments.map(childId => renderComment(noteId, childId, depth + 1))}
           </div>
         )}
       </div>
@@ -644,181 +770,96 @@ export default function DashboardPage() {
   };
 
   const renderPublicContent = () => {
-    const visibleNotes = notes.filter(note => note.created_at >= CUTOFF_DATE);
+    const visibleNotes = notes
+      .filter(note => note.created_at >= CUTOFF_DATE)
+      .sort((a, b) => b.created_at - a.created_at);
     
     return (
       <div className="space-y-4">
         <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold">Community Feed</h2>
+          <h2 className="text-2xl font-bold">Community Support</h2>
         </div>
-        {/* Selected Comment Context */}
-        {selectedComment && (
-          <div className="mb-6">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Original Post</h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedComment(null)}
-                >
-                  Close
-                </Button>
-              </div>
-              <div className="text-xs text-gray-500 mb-3">
-                {new Date(selectedComment.parentNote.created_at * 1000).toLocaleString()}
-              </div>
-              <p className="text-gray-900 whitespace-pre-wrap text-base">{selectedComment.parentNote.content}</p>
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <div className="text-sm font-medium text-gray-500">Selected Comment:</div>
-                <div className="mt-2 bg-purple-50 rounded p-3 border border-purple-100">
-                  <div className="text-xs text-gray-500 mb-1">
-                    {new Date(selectedComment.comment.created_at * 1000).toLocaleString()}
-                  </div>
-                  <p className="text-sm text-gray-900">{selectedComment.comment.content}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Content Feed */}
         <div className="space-y-6">
           {visibleNotes.length === 0 ? (
             <div className="text-center text-gray-500 py-8">
               No posts available yet
             </div>
           ) : (
-            visibleNotes
-              .sort((a, b) => b.created_at - a.created_at)
-              .map((note) => (
-                <div
-                  key={note.id}
-                  className="bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200"
+            visibleNotes.map((note) => (
+              <div
+                key={note.id}
+                className="bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200"
+              >
+                <div 
+                  className="p-6 cursor-pointer"
+                  onClick={() => toggleComments(note.id)}
                 >
-                  <div 
-                    className="p-6 cursor-pointer"
-                    onClick={() => toggleComments(note.id)}
-                  >
-                    <div className="text-xs text-gray-500 mb-3">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="text-xs text-gray-500">
                       {new Date(note.created_at * 1000).toLocaleString()}
                     </div>
-                    <p className="text-gray-900 whitespace-pre-wrap text-base mb-4">{note.content}</p>
-                    
-                    <div className="flex items-center space-x-4 text-sm text-gray-600" onClick={e => e.stopPropagation()}>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <button className="flex items-center space-x-1.5 hover:text-purple-600 transition-colors">
-                            <ThumbsUp className="h-4 w-4" />
-                            <div className="flex items-center space-x-1">
-                              {Object.entries(emojiReactions[note.id] || {}).map(([emoji, count], index) => (
-                                <span key={emoji} className="inline-flex items-center">
-                                  {emoji}<span className="ml-1">{count}</span>
-                                  {index < Object.entries(emojiReactions[note.id] || {}).length - 1 && " "}
-                                </span>
-                              ))}
-                              {!Object.keys(emojiReactions[note.id] || {}).length && (
-                                <span>{aggregatedNotes[note.id]?.reactions || 0}</span>
-                              )}
-                            </div>
-                          </button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-full p-0 border-none" align="start">
-                          <Picker
-                            data={data}
-                            onEmojiSelect={(emoji: EmojiSelection) => handleEmojiSelect(note.id, emoji)}
-                            theme="light"
-                            set="native"
-                            showPreview={false}
-                            showSkinTones={false}
-                            emojiSize={22}
-                            emojiButtonSize={32}
-                            maxFrequentRows={0}
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <div className="flex items-center space-x-1.5">
-                        <MessageCircle className="h-4 w-4" />
-                        <span>{aggregatedNotes[note.id]?.comments || 0}</span>
+                    <div className="flex items-center space-x-2">
+                      <div className="text-xs font-mono text-purple-600 bg-purple-50 px-2 py-0.5 rounded">
+                        {note.pubkey.slice(-4)}
                       </div>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <button className="flex items-center space-x-1.5 hover:text-purple-600 transition-colors">
-                            <Zap className="h-4 w-4" />
-                            <span>{aggregatedNotes[note.id]?.zaps || 0}</span>
-                          </button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Send Zap</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div>
-                              <label className="text-sm font-medium">Amount (sats)</label>
-                              <Input
-                                type="number"
-                                value={zapAmounts[note.id] || ""}
-                                onChange={(e) => setZapAmounts(prev => ({ ...prev, [note.id]: e.target.value }))}
-                                placeholder="Enter amount in sats"
-                                className="mt-1"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium">Comment (optional)</label>
-                              <Input
-                                value={zapComments[note.id] || ""}
-                                onChange={(e) => setZapComments(prev => ({ ...prev, [note.id]: e.target.value }))}
-                                placeholder="Add a comment with your zap"
-                                className="mt-1"
-                              />
-                            </div>
-                            <Button
-                              className="w-full"
-                              onClick={() => handleZap(note.id)}
-                              disabled={!zapAmounts[note.id] || parseInt(zapAmounts[note.id]) <= 0}
-                            >
-                              Send Zap
-                            </Button>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
                     </div>
                   </div>
+                  <p className="text-gray-900 whitespace-pre-wrap text-base mb-4">{note.content}</p>
+                  
+                  <div className="flex items-center space-x-4 text-sm text-gray-600" onClick={e => e.stopPropagation()}>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleReaction(note.id)
+                      }}
+                      className="flex items-center space-x-1.5 hover:text-purple-600 transition-colors"
+                    >
+                      <ThumbsUp className="h-4 w-4" />
+                      <span>{note.reactions.likes || 0}</span>
+                    </button>
+                    <div className="flex items-center space-x-1.5">
+                      <MessageCircle className="h-4 w-4" />
+                      <span>{aggregatedNotes[note.id]?.comments || 0}</span>
+                    </div>
+                  </div>
+                </div>
 
-                  {/* Comments Section */}
-                  {expandedComments[note.id] && (
-                    <div className="border-t border-gray-100">
-                      <div className="p-6">
-                        <div className="space-y-4">
-                          <div className="relative">
-                            <Input
-                              value={commentInputs[note.id] || ""}
-                              onChange={(e) => setCommentInputs(prev => ({ ...prev, [note.id]: e.target.value }))}
-                              placeholder="Write a comment..."
-                              className="text-sm pr-12"
-                              onClick={e => e.stopPropagation()}
-                            />
-                            <Button 
-                              size="sm"
-                              className="absolute right-1 top-1 h-7"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleComment(note.id);
-                              }}
-                              disabled={!commentInputs[note.id]?.trim()}
-                            >
-                              <Send className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                          <div className="space-y-4" onClick={e => e.stopPropagation()}>
-                            {note.comments?.map(comment => renderComment(note.id, comment, note))}
-                          </div>
+                {/* Comments Section */}
+                {expandedComments[note.id] && (
+                  <div className="border-t border-gray-100">
+                    <div className="p-6">
+                      <div className="space-y-4">
+                        <div className="relative">
+                          <Input
+                            value={commentInputs[note.id] || ""}
+                            onChange={(e) => setCommentInputs(prev => ({ ...prev, [note.id]: e.target.value }))}
+                            placeholder="Write a comment..."
+                            className="text-sm pr-12"
+                            onClick={e => e.stopPropagation()}
+                          />
+                          <Button 
+                            size="sm"
+                            className="absolute right-1 top-1 h-7"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleComment(note.id, commentInputs[note.id] || "", undefined)
+                            }}
+                            disabled={!commentInputs[note.id]?.trim()}
+                          >
+                            <Send className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                        <div className="space-y-4" onClick={e => e.stopPropagation()}>
+                          {getTopLevelComments(note.id).map(commentId => 
+                            renderComment(note.id, commentId)
+                          )}
                         </div>
                       </div>
                     </div>
-                  )}
-                </div>
-              ))
+                  </div>
+                )}
+              </div>
+            ))
           )}
         </div>
       </div>
@@ -827,7 +868,84 @@ export default function DashboardPage() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case "lets-talk":
+      case "mira":
+        return (
+          <div className="max-w-2xl mx-auto">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+              <div className="text-center space-y-6">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-purple-100 to-orange-100 mb-4">
+                  <svg
+                    className="w-8 h-8 text-purple-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                    />
+                  </svg>
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900">Chat with Mira</h2>
+                <div className="flex justify-center">
+                  <Button
+                    variant="outline"
+                    className="bg-gradient-to-r from-purple-100 to-orange-100 border-purple-200 text-purple-600 hover:from-purple-200 hover:to-orange-200"
+                  >
+                    Coming Soon
+                  </Button>
+                </div>
+                <p className="text-gray-600 max-w-md mx-auto">
+                  Mira, your AI companion for recovery, is coming soon. She'll be here to provide support, guidance, and a listening ear 24/7.
+                </p>
+                <div className="space-y-4 text-left max-w-md mx-auto">
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0 mt-1">
+                      <div className="w-2 h-2 rounded-full bg-purple-600"></div>
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-gray-900">Personalized Support</h3>
+                      <p className="text-sm text-gray-600">
+                        Get tailored guidance and support based on your unique journey and needs.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0 mt-1">
+                      <div className="w-2 h-2 rounded-full bg-purple-600"></div>
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-gray-900">24/7 Availability</h3>
+                      <p className="text-sm text-gray-600">
+                        Access support anytime, anywhere - Mira is always here to help.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0 mt-1">
+                      <div className="w-2 h-2 rounded-full bg-purple-600"></div>
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-gray-900">Private & Secure</h3>
+                      <p className="text-sm text-gray-600">
+                        Your conversations with Mira are completely private and secure.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="pt-4">
+                  <p className="text-sm text-gray-500">
+                    We're working hard to bring Mira to you. Stay tuned for updates!
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      case "meet":
         return (
           <div className="max-w-2xl mx-auto">
             <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
@@ -848,7 +966,7 @@ export default function DashboardPage() {
                     />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900">Let's Talk</h2>
+                <h2 className="text-2xl font-bold text-gray-900">Let's Meet</h2>
                 <p className="text-gray-600">
                   Coming soon: Connect with others in real-time through our community spaces.
                 </p>
@@ -1133,6 +1251,45 @@ export default function DashboardPage() {
     }
   }
 
+  const renderProfileContent = () => {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Profile Settings</h2>
+          
+          <div className="space-y-6">
+            <div className="border-t border-gray-200 pt-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Account Information</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Public Key</label>
+                  <div className="mt-1">
+                    <Input
+                      value={publicKey || ''}
+                      readOnly
+                      className="bg-gray-50"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-200 pt-6">
+              <h3 className="text-lg font-medium text-red-600 mb-4">Danger Zone</h3>
+              <Button
+                variant="destructive"
+                onClick={handleLogout}
+                className="w-full sm:w-auto"
+              >
+                Logout
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (!privateKey) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -1147,23 +1304,17 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 pb-16">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto px-4 py-4">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-orange-500 bg-clip-text text-transparent">
-              Sobrkey
-            </h1>
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-[#663399] to-orange-500 bg-clip-text text-transparent">
+                Sobrkey
+              </h1>
+            </div>
             <div className="flex items-center gap-2">
-              <Button 
-                variant="ghost" 
-                className="bg-gradient-to-r from-purple-600 to-orange-500 text-white hover:opacity-90"
-                onClick={() => setIsZapDialogOpen(true)}
-              >
-                <Zap className="h-4 w-4 mr-2" />
-                Zap Sobrkey
-              </Button>
               <Button
                 variant="ghost"
                 size="icon"
@@ -1176,24 +1327,26 @@ export default function DashboardPage() {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-2 overflow-x-auto pb-4 mb-6">
-            {visibleTabs.map((tab) => (
-              <Button
-                key={tab}
-                onClick={() => handleTabChange(tab)}
-                variant={activeTab === tab ? "default" : "ghost"}
-                className={`
-                  whitespace-nowrap
-                  ${activeTab === tab ? 
-                    'bg-gradient-to-r from-purple-600 to-orange-500 text-white' : 
-                    'text-gray-600 hover:text-gray-900'
-                  }
-                `}
-              >
-                {tab}
-              </Button>
-            ))}
-          </div>
+          {visibleTabs.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto pb-4 mb-6">
+              {visibleTabs.map((tab) => (
+                <Button
+                  key={tab}
+                  onClick={() => handleTabChange(tab)}
+                  variant={activeTab === tab ? "default" : "ghost"}
+                  className={`
+                    whitespace-nowrap
+                    ${activeTab === tab ? 
+                      'bg-gradient-to-r from-[#663399] to-orange-500 text-white' : 
+                      'text-gray-600 hover:text-gray-900'
+                    }
+                  `}
+                >
+                  {tab}
+                </Button>
+              ))}
+            </div>
+          )}
 
           {/* Content */}
           <div className="space-y-4">
@@ -1205,53 +1358,6 @@ export default function DashboardPage() {
       {/* Mobile Navigation */}
       <MobileNav />
       <FloatingActionButton onClick={() => setIsNewNoteDialogOpen(true)} />
-
-      {/* Zap Dialog */}
-      <Dialog open={isZapDialogOpen} onOpenChange={setIsZapDialogOpen}>
-        <DialogTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            className="bg-gradient-to-r from-orange-500 to-purple-600 text-white hover:from-orange-600 hover:to-purple-700"
-          >
-            <Zap className="h-4 w-4 mr-2" />
-            Zap Sobrkey
-          </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Support Sobrkey Development</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Amount (sats)</label>
-              <Input
-                type="number"
-                value={zapAmount}
-                onChange={(e) => setZapAmount(e.target.value)}
-                placeholder="Enter amount in sats"
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Message (optional)</label>
-              <Input
-                value={zapComment}
-                onChange={(e) => setZapComment(e.target.value)}
-                placeholder="Add a message with your zap"
-                className="mt-1"
-              />
-            </div>
-            <Button
-              className="w-full"
-              onClick={handleZapUs}
-              disabled={!zapAmount || parseInt(zapAmount) <= 0}
-            >
-              Send Zap
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* New Note Dialog */}
       <Dialog open={isNewNoteDialogOpen} onOpenChange={setIsNewNoteDialogOpen}>
@@ -1268,7 +1374,7 @@ export default function DashboardPage() {
               autoFocus
             />
             <Button
-              className="w-full bg-gradient-to-r from-purple-600 to-orange-500 text-white hover:opacity-90 disabled:opacity-50"
+              className="w-full bg-gradient-to-r from-[#663399] to-orange-500 text-white hover:opacity-90 disabled:opacity-50"
               onClick={handlePublish}
               disabled={!newNoteContent.trim() || isPostingNote}
             >
@@ -1279,4 +1385,6 @@ export default function DashboardPage() {
       </Dialog>
     </div>
   )
-} 
+}
+
+export default DashboardPage 

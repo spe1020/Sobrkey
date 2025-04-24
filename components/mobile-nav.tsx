@@ -1,41 +1,63 @@
 "use client"
 
-import { MessageCircle, Users, User } from "lucide-react"
-import { usePathname, useRouter } from "next/navigation"
-import { cn } from "@/lib/utils"
-
-const tabs = [
-  { name: "Mira", href: "/dashboard?tab=chat-with-mira", icon: MessageCircle },
-  { name: "Community", href: "/dashboard?tab=public", icon: Users },
-  { name: "Profile", href: "/profile", icon: User },
-]
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { Home, Users, MessageSquare, BookOpen, User } from "lucide-react"
 
 export function MobileNav() {
   const pathname = usePathname()
-  const router = useRouter()
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-white dark:bg-gray-900">
-      <div className="grid h-16 grid-cols-3">
-        {tabs.map((tab) => {
-          const isActive = pathname === tab.href
-          const Icon = tab.icon
-          
-          return (
-            <button
-              key={tab.name}
-              onClick={() => router.push(tab.href)}
-              className={cn(
-                "flex flex-col items-center justify-center space-y-1",
-                isActive ? "text-purple-600" : "text-gray-500"
-              )}
-            >
-              <Icon className="h-5 w-5" />
-              <span className="text-xs">{tab.name}</span>
-            </button>
-          )
-        })}
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
+      <div className="container mx-auto px-4">
+        <div className="flex justify-between items-center h-16">
+          <Link
+            href="/dashboard"
+            className={`flex flex-col items-center justify-center w-full h-full ${
+              pathname === "/dashboard" ? "text-purple-600" : "text-gray-500"
+            }`}
+          >
+            <Home className="h-5 w-5" />
+            <span className="text-xs mt-1">Home</span>
+          </Link>
+          <Link
+            href="/dashboard?tab=public"
+            className={`flex flex-col items-center justify-center w-full h-full ${
+              pathname === "/dashboard" && pathname.includes("public") ? "text-purple-600" : "text-gray-500"
+            }`}
+          >
+            <Users className="h-5 w-5" />
+            <span className="text-xs mt-1">Community</span>
+          </Link>
+          <Link
+            href="/dashboard?tab=mira"
+            className={`flex flex-col items-center justify-center w-full h-full ${
+              pathname === "/dashboard" && pathname.includes("mira") ? "text-purple-600" : "text-gray-500"
+            }`}
+          >
+            <MessageSquare className="h-5 w-5" />
+            <span className="text-xs mt-1">Mira</span>
+          </Link>
+          <Link
+            href="/journal"
+            className={`flex flex-col items-center justify-center w-full h-full ${
+              pathname === "/journal" ? "text-purple-600" : "text-gray-500"
+            }`}
+          >
+            <BookOpen className="h-5 w-5" />
+            <span className="text-xs mt-1">Journal</span>
+          </Link>
+          <Link
+            href="/profile"
+            className={`flex flex-col items-center justify-center w-full h-full ${
+              pathname === "/profile" ? "text-purple-600" : "text-gray-500"
+            }`}
+          >
+            <User className="h-5 w-5" />
+            <span className="text-xs mt-1">Profile</span>
+          </Link>
+        </div>
       </div>
-    </div>
+    </nav>
   )
 } 
