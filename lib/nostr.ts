@@ -27,8 +27,12 @@ interface NostrEvent {
 const RELAYS = [
   'wss://relay.damus.io',
   'wss://relay.nostr.band',
-  'wss://nos.lol'
+  'wss://nos.lol',
+  'wss://relay.nostr.info',
+  'wss://nostr.wine'
 ];
+
+export const RECOVERY_HASHTAGS = ['sobrkey', 'sober', 'alcoholfree', 'sobriety'];
 
 const pool = new SimplePool();
 
@@ -50,10 +54,13 @@ export async function publishNote(content: string, privateKey: string): Promise<
     const privateKeyBytes = getPrivateKeyBytes(privateKey)
     const publicKey = getPublicKey(privateKeyBytes)
     
+    // Include multiple recovery-related hashtags
+    const hashtagTags = RECOVERY_HASHTAGS.map(tag => ['t', tag]);
+    
     const event: UnsignedEvent = {
       kind: 1,
       created_at: Math.floor(Date.now() / 1000),
-      tags: [['t', 'sobrkey']],
+      tags: hashtagTags,
       content,
       pubkey: publicKey,
     }
@@ -84,10 +91,13 @@ export async function publishNote(content: string, privateKey: string): Promise<
 }
 
 export async function publishReaction(privateKey: string, eventId: string, content: string = "+") {
+  // Include multiple recovery-related hashtags
+  const hashtagTags = RECOVERY_HASHTAGS.map(tag => ['t', tag]);
+  
   const event = {
     kind: 7,
     created_at: Math.floor(Date.now() / 1000),
-    tags: [['e', eventId], ['t', 'sobrkey']],
+    tags: [['e', eventId], ...hashtagTags],
     content
   };
 
@@ -109,9 +119,14 @@ export const publishComment = async (
     const privateKeyBytes = getPrivateKeyBytes(privateKey)
     const publicKey = getPublicKey(privateKeyBytes)
 
-    const tags = parentId 
+    const baseTags = parentId 
       ? [['e', noteId, 'root'], ['e', parentId, 'reply']]
       : [['e', noteId, 'root']]
+
+    // Include multiple recovery-related hashtags
+    const hashtagTags = RECOVERY_HASHTAGS.map(tag => ['t', tag]);
+    
+    const tags = [...baseTags, ...hashtagTags];
 
     const event = {
       kind,
@@ -147,6 +162,9 @@ export const publishComment = async (
 }
 
 export async function publishZapRequest(privateKey: string, eventId: string, amount: number, comment?: string) {
+  // Include multiple recovery-related hashtags
+  const hashtagTags = RECOVERY_HASHTAGS.map(tag => ['t', tag]);
+  
   const event = {
     kind: 9734, // NIP-57 Zap Request
     created_at: Math.floor(Date.now() / 1000),
@@ -155,7 +173,7 @@ export async function publishZapRequest(privateKey: string, eventId: string, amo
       ['p', eventId], // This should be the pubkey of the note's author
       ['amount', amount.toString()],
       ['relays', ...RELAYS],
-      ['t', 'sobrkey']
+      ...hashtagTags
     ],
     content: comment || ''
   };
@@ -171,7 +189,23 @@ export function subscribeToTag(tag: string, callback: (event: Event) => void) {
   const filter: Filter = {
     kinds: [1], // Only include notes (kind 1)
     '#t': [tag],
-    since: Math.floor(Date.now() / 1000) - (60 * 60 * 24 * 7) // Last 7 days
+    since: Math.floor(Date.now() / 1000) - (60 * 60 * 24 * 30 * 6) // Last 6 months
+  };
+
+  const sub = pool.subscribe(RELAYS, filter, {
+    onevent: callback
+  });
+
+  return () => {
+    sub.close();
+  };
+}
+
+export function subscribeToMultipleTags(tags: string[], callback: (event: Event) => void) {
+  const filter: Filter = {
+    kinds: [1], // Only include notes (kind 1)
+    '#t': tags,
+    since: Math.floor(Date.now() / 1000) - (60 * 60 * 24 * 30 * 6) // Last 6 months
   };
 
   const sub = pool.subscribe(RELAYS, filter, {
@@ -184,10 +218,11 @@ export function subscribeToTag(tag: string, callback: (event: Event) => void) {
 }
 
 export function subscribeToComments(eventId: string, callback: (event: Event) => void) {
+  
   const filter: Filter = {
     kinds: [1, 1111], // Include both top-level comments and replies
     '#e': [eventId],
-    '#t': ['sobrkey']
+    '#t': RECOVERY_HASHTAGS
   };
 
   const sub = pool.subscribe(RELAYS, filter, {
@@ -200,10 +235,11 @@ export function subscribeToComments(eventId: string, callback: (event: Event) =>
 }
 
 export function subscribeToZaps(eventId: string, callback: (event: Event) => void) {
+  
   const filter: Filter = {
     kinds: [9735], // NIP-57 Zap Receipt
     '#e': [eventId],
-    '#t': ['sobrkey']
+    '#t': RECOVERY_HASHTAGS
   };
 
   const sub = pool.subscribe(RELAYS, filter, {

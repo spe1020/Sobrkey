@@ -7,6 +7,8 @@ import { MessageCircle, Zap } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { CommentThread } from "./CommentThread"
 import { Note, Comment } from "@/types/nostr"
+import { MediaDisplay } from "@/components/MediaDisplay"
+import { LinkPreviews } from "@/components/LinkPreviews"
 
 interface NoteCardProps {
   note: Note
@@ -57,7 +59,21 @@ export function NoteCard({
             {note.pubkey.slice(-4)}
           </div>
         </div>
-        <p className="text-gray-900 whitespace-pre-wrap text-base mb-4">{note.content}</p>
+        <p className="text-gray-900 whitespace-pre-wrap text-base mb-4">{note.cleanContent || note.content}</p>
+        
+        {/* Display media if present */}
+        {note.media && note.media.length > 0 && (
+          <div className="mb-4">
+            <MediaDisplay media={note.media} />
+          </div>
+        )}
+        
+        {/* Display link previews if present */}
+        {note.links && note.links.length > 0 && (
+          <div className="mb-4">
+            <LinkPreviews urls={note.links} />
+          </div>
+        )}
         
         <div className="flex items-center space-x-4 text-sm text-gray-600" onClick={e => e.stopPropagation()}>
           <div className="flex items-center space-x-1.5">

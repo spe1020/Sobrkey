@@ -2,7 +2,11 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useNostr } from "@/lib/nostr"
-import { publishNote, publishReaction, publishComment, subscribeToTag, subscribeToComments } from "@/lib/nostr"
+import { publishNote, publishReaction, publishComment, subscribeToTag, subscribeToMultipleTags, subscribeToComments, RECOVERY_HASHTAGS } from "@/lib/nostr"
+import { extractMediaFromContent } from "@/lib/media"
+import { extractLinkPreviews } from "@/lib/links"
+import { MediaDisplay } from "@/components/MediaDisplay"
+import { LinkPreviews } from "@/components/LinkPreviews"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/components/ui/use-toast"
@@ -491,6 +495,10 @@ const DashboardPage = () => {
             if (!processedCommentIds.current.has(event.id)) {
               processedCommentIds.current.add(event.id);
               
+              // Extract media and links from comment content
+              const { media, cleanContent: mediaCleanContent } = extractMediaFromContent(event.content);
+              const { links, cleanContent: linksCleanContent } = extractLinkPreviews(mediaCleanContent);
+              
               // Batch state updates
               setCommentsByNoteId(prev => {
                 const noteComments = {...(prev[note.id] || {})};
@@ -500,7 +508,10 @@ const DashboardPage = () => {
                   created_at: event.created_at,
                   pubkey: event.pubkey,
                   kind: event.kind,
-                  tags: event.tags
+                  tags: event.tags,
+                  media: media,
+                  links: links,
+                  cleanContent: linksCleanContent
                 };
                 return {...prev, [note.id]: noteComments};
               });
@@ -566,7 +577,8 @@ const DashboardPage = () => {
     const subscribeToNotes = async () => {
       if (noteSubscription.current) return; // Prevent duplicate subscriptions
 
-      const unsubscribe = subscribeToTag('sobrkey', (event: NostrEvent) => {
+      // Subscribe to multiple recovery-related hashtags
+      const unsubscribe = subscribeToMultipleTags(RECOVERY_HASHTAGS, (event: NostrEvent) => {
         if (!processedNoteIds.current.has(event.id)) {
           processedNoteIds.current.add(event.id);
           
@@ -575,11 +587,18 @@ const DashboardPage = () => {
               return prevNotes;
             }
             
+            // Extract media and links from content
+            const { media, cleanContent: mediaCleanContent } = extractMediaFromContent(event.content);
+            const { links, cleanContent: linksCleanContent } = extractLinkPreviews(mediaCleanContent);
+            
             const newNote: Note = {
               id: event.id,
               content: event.content,
               created_at: event.created_at,
               pubkey: event.pubkey,
+              media: media,
+              links: links,
+              cleanContent: linksCleanContent,
               reactions: {
                 likes: 0
               },
@@ -804,7 +823,21 @@ const DashboardPage = () => {
                       </div>
                     </div>
                   </div>
-                  <p className="text-gray-900 whitespace-pre-wrap text-base mb-4">{note.content}</p>
+                  <p className="text-gray-900 whitespace-pre-wrap text-base mb-4">{note.cleanContent || note.content}</p>
+                  
+                  {/* Display media if present */}
+                  {note.media && note.media.length > 0 && (
+                    <div className="mb-4">
+                      <MediaDisplay media={note.media} />
+                    </div>
+                  )}
+                  
+                  {/* Display link previews if present */}
+                  {note.links && note.links.length > 0 && (
+                    <div className="mb-4">
+                      <LinkPreviews urls={note.links} />
+                    </div>
+                  )}
                   
                   <div className="flex items-center space-x-4 text-sm text-gray-600" onClick={e => e.stopPropagation()}>
                     <button 

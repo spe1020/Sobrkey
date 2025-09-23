@@ -4,6 +4,8 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Note, Comment } from "@/types/nostr"
+import { MediaDisplay } from "@/components/MediaDisplay"
+import { LinkPreviews } from "@/components/LinkPreviews"
 
 interface CommentThreadProps {
   note: Note
@@ -37,7 +39,21 @@ export function CommentThread({ note, onComment }: CommentThreadProps) {
             <div className="text-sm text-gray-500">
               {comment.pubkey.slice(0, 8)}...{comment.pubkey.slice(-8)}
             </div>
-            <div className="mt-1">{comment.content}</div>
+            <div className="mt-1 whitespace-pre-wrap">{comment.cleanContent || comment.content}</div>
+            
+            {/* Display media if present */}
+            {comment.media && comment.media.length > 0 && (
+              <div className="mt-2">
+                <MediaDisplay media={comment.media} />
+              </div>
+            )}
+            
+            {/* Display link previews if present */}
+            {comment.links && comment.links.length > 0 && (
+              <div className="mt-2">
+                <LinkPreviews urls={comment.links} />
+              </div>
+            )}
             <Button
               variant="ghost"
               size="sm"
