@@ -107,6 +107,13 @@ const DashboardPage = () => {
   const { privateKey, publicKey, logout } = useNostr()
   const { toast } = useToast()
   const router = useRouter()
+
+  // Redirect to welcome if not logged in
+  useEffect(() => {
+    if (!privateKey) {
+      router.push('/auth/welcome');
+    }
+  }, [privateKey, router]);
   const [localResources, setLocalResources] = useState<any[]>([])
   const [isLoadingLocal, setIsLoadingLocal] = useState(false)
   const [aggregatedNotes, setAggregatedNotes] = useState<{ [key: string]: Note['aggregatedCounts'] }>({})
@@ -171,7 +178,7 @@ const DashboardPage = () => {
     expandedNoteIds.forEach(noteId => {
       const noteComments = commentsByNoteId[noteId] || {};
       const topLevelComments = getTopLevelComments(noteId);
-      
+
       console.log(`Note ${noteId} details:`, {
         totalComments: Object.keys(noteComments).length,
         topLevelComments: topLevelComments.length,
@@ -217,7 +224,7 @@ const DashboardPage = () => {
       console.log('Reply state:', {
         replyingTo,
         parentComment: commentsByNoteId[replyingTo]?.[replyingTo],
-        parentNoteId: Object.keys(commentsByNoteId).find(noteId => 
+        parentNoteId: Object.keys(commentsByNoteId).find(noteId =>
           commentsByNoteId[noteId]?.[replyingTo] !== undefined
         )
       });
@@ -277,12 +284,12 @@ const DashboardPage = () => {
   const updateNoteCounts = (noteId: string) => {
     const noteComments = commentsByNoteId[noteId] || {};
     const commentIds = Object.keys(noteComments);
-    
+
     // Get all kind 1111 comments for this note
     const allComments = commentIds
       .map(id => noteComments[id])
       .filter(comment => comment.kind === 1111);
-    
+
     // Count comments
     const totalComments = allComments.length;
 
@@ -292,7 +299,7 @@ const DashboardPage = () => {
       kind1111Comments: allComments.length,
       relationships: Object.keys(commentRelationships).length
     });
-    
+
     setAggregatedNotes(prev => ({
       ...prev,
       [noteId]: {
@@ -308,7 +315,7 @@ const DashboardPage = () => {
     return commentIds.filter(id => {
       const comment = commentsByNoteId[noteId][id];
       // Only show kind 1111 comments that are direct replies to the note
-      return comment.kind === 1111 && comment.tags?.some(t => 
+      return comment.kind === 1111 && comment.tags?.some(t =>
         t[0] === 'e' && t[1] === noteId && t[2] === 'root'
       );
     });
@@ -318,12 +325,12 @@ const DashboardPage = () => {
     const childIds = commentRelationships[commentId]?.childIds || [];
     return childIds.filter(id => {
       // Find the note this comment belongs to by searching through all notes
-      const foundNoteId = Object.keys(commentsByNoteId).find((currentNoteId: string) => 
+      const foundNoteId = Object.keys(commentsByNoteId).find((currentNoteId: string) =>
         commentsByNoteId[currentNoteId][id] !== undefined
       );
-      
+
       if (!foundNoteId) return false;
-      
+
       const comment = commentsByNoteId[foundNoteId][id];
       // Only return kind 1111 events (threaded comments)
       return comment.kind === 1111;
@@ -361,7 +368,7 @@ const DashboardPage = () => {
     try {
       // All comments in the thread should be kind 1111
       const kind = 1111;
-      
+
       // Create the appropriate tags
       const tags = parentCommentId
         ? [['e', noteId, 'root'], ['e', parentCommentId, 'reply']]
@@ -375,7 +382,7 @@ const DashboardPage = () => {
 
       // Publish the comment and get the event
       const event = await publishComment(privateKey, noteId, commentContent, parentCommentId || '', kind);
-      
+
       if (!event) {
         throw new Error('Failed to publish comment');
       }
@@ -431,7 +438,7 @@ const DashboardPage = () => {
         }
         return newInputs;
       });
-      
+
       // Update counts immediately
       setTimeout(() => updateNoteCounts(noteId), 100);
 
@@ -494,11 +501,11 @@ const DashboardPage = () => {
           const unsubscribe = await subscribeToComments(note.id, (event) => {
             if (!processedCommentIds.current.has(event.id)) {
               processedCommentIds.current.add(event.id);
-              
+
               // Extract media and links from comment content
               const { media, cleanContent: mediaCleanContent } = extractMediaFromContent(event.content);
               const { links, cleanContent: linksCleanContent } = extractLinkPreviews(mediaCleanContent);
-              
+
               // Batch state updates
               setCommentsByNoteId(prev => {
                 const noteComments = {...(prev[note.id] || {})};
@@ -581,16 +588,16 @@ const DashboardPage = () => {
       const unsubscribe = subscribeToMultipleTags(RECOVERY_HASHTAGS, (event: NostrEvent) => {
         if (!processedNoteIds.current.has(event.id)) {
           processedNoteIds.current.add(event.id);
-          
+
           setNotes(prevNotes => {
             if (prevNotes.some(note => note.id === event.id)) {
               return prevNotes;
             }
-            
+
             // Extract media and links from content
             const { media, cleanContent: mediaCleanContent } = extractMediaFromContent(event.content);
             const { links, cleanContent: linksCleanContent } = extractLinkPreviews(mediaCleanContent);
-            
+
             const newNote: Note = {
               id: event.id,
               content: event.content,
@@ -613,7 +620,7 @@ const DashboardPage = () => {
           });
         }
       });
-      
+
       noteSubscription.current = unsubscribe;
     };
 
@@ -641,7 +648,7 @@ const DashboardPage = () => {
     try {
       setIsPostingNote(true);
       const event = await publishNote(newNoteContent.trim(), privateKey);
-      
+
       if (!event) {
         throw new Error("Failed to publish note");
       }
@@ -650,7 +657,7 @@ const DashboardPage = () => {
         if (prevNotes.some(note => note.id === event.id)) {
           return prevNotes;
         }
-        
+
         const newNote: Note = {
           id: event.id,
           content: event.content,
@@ -668,10 +675,10 @@ const DashboardPage = () => {
 
         return [newNote, ...prevNotes];
       });
-      
+
       setNewNoteContent("");
       setIsNewNoteDialogOpen(false);
-      
+
       toast({
         title: "Success",
         description: "Your note has been published!",
@@ -700,16 +707,16 @@ const DashboardPage = () => {
 
     try {
       await publishReaction(privateKey, noteId);
-      
+
       // Update both the reactions state and the note's reaction count
       setReactions(prev => ({
         ...prev,
         [noteId]: (prev[noteId] || 0) + 1
       }));
 
-      setNotes(prevNotes => 
-        prevNotes.map(note => 
-          note.id === noteId 
+      setNotes(prevNotes =>
+        prevNotes.map(note =>
+          note.id === noteId
             ? {
                 ...note,
                 reactions: {
@@ -792,7 +799,7 @@ const DashboardPage = () => {
     const visibleNotes = notes
       .filter(note => note.created_at >= CUTOFF_DATE)
       .sort((a, b) => b.created_at - a.created_at);
-    
+
     return (
       <div className="space-y-4">
         <div className="flex justify-between items-center">
@@ -809,7 +816,7 @@ const DashboardPage = () => {
                 key={note.id}
                 className="bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200"
               >
-                <div 
+                <div
                   className="p-6 cursor-pointer"
                   onClick={() => toggleComments(note.id)}
                 >
@@ -824,23 +831,23 @@ const DashboardPage = () => {
                     </div>
                   </div>
                   <p className="text-gray-900 whitespace-pre-wrap text-base mb-4">{note.cleanContent || note.content}</p>
-                  
+
                   {/* Display media if present */}
                   {note.media && note.media.length > 0 && (
                     <div className="mb-4">
                       <MediaDisplay media={note.media} />
                     </div>
                   )}
-                  
+
                   {/* Display link previews if present */}
                   {note.links && note.links.length > 0 && (
                     <div className="mb-4">
                       <LinkPreviews urls={note.links} />
                     </div>
                   )}
-                  
+
                   <div className="flex items-center space-x-4 text-sm text-gray-600" onClick={e => e.stopPropagation()}>
-                    <button 
+                    <button
                       onClick={(e) => {
                         e.stopPropagation()
                         handleReaction(note.id)
@@ -870,7 +877,7 @@ const DashboardPage = () => {
                             className="text-sm pr-12"
                             onClick={e => e.stopPropagation()}
                           />
-                          <Button 
+                          <Button
                             size="sm"
                             className="absolute right-1 top-1 h-7"
                             onClick={(e) => {
@@ -883,7 +890,7 @@ const DashboardPage = () => {
                           </Button>
                         </div>
                         <div className="space-y-4" onClick={e => e.stopPropagation()}>
-                          {getTopLevelComments(note.id).map(commentId => 
+                          {getTopLevelComments(note.id).map(commentId =>
                             renderComment(note.id, commentId)
                           )}
                         </div>
@@ -1289,7 +1296,7 @@ const DashboardPage = () => {
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Profile Settings</h2>
-          
+
           <div className="space-y-6">
             <div className="border-t border-gray-200 pt-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Account Information</h3>
@@ -1369,8 +1376,8 @@ const DashboardPage = () => {
                   variant={activeTab === tab ? "default" : "ghost"}
                   className={`
                     whitespace-nowrap
-                    ${activeTab === tab ? 
-                      'bg-gradient-to-r from-[#663399] to-orange-500 text-white' : 
+                    ${activeTab === tab ?
+                      'bg-gradient-to-r from-[#663399] to-orange-500 text-white' :
                       'text-gray-600 hover:text-gray-900'
                     }
                   `}
@@ -1420,4 +1427,4 @@ const DashboardPage = () => {
   )
 }
 
-export default DashboardPage 
+export default DashboardPage
